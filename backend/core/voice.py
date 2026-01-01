@@ -45,17 +45,26 @@ class VoiceManager:
             try:
                 self.tts_engine = pyttsx3.init()
                 
-                # Configure TTS settings
+                # Configure TTS settings for Persian
                 voices = self.tts_engine.getProperty('voices')
-                # Try to find Persian/Arabic voice, fallback to default
+                persian_voice_found = False
+                
+                # Try to find Persian/Arabic voice
                 for voice in voices:
-                    if 'persian' in voice.name.lower() or 'farsi' in voice.name.lower():
+                    voice_name = voice.name.lower()
+                    if any(keyword in voice_name for keyword in ['persian', 'farsi', 'arabic', 'urdu', 'zira', 'hazel']):
                         self.tts_engine.setProperty('voice', voice.id)
+                        persian_voice_found = True
+                        print(f"✅ Persian voice found: {voice.name}")
                         break
                 
-                # Set speech rate and volume
-                self.tts_engine.setProperty('rate', 150)  # Speed
-                self.tts_engine.setProperty('volume', 0.8)  # Volume
+                if not persian_voice_found:
+                    print("⚠️ No Persian voice found, using default")
+                
+                # Set speech rate and volume for better Persian pronunciation
+                self.tts_engine.setProperty('rate', 120)  # Slower for Persian
+                self.tts_engine.setProperty('volume', 0.9)  # Higher volume
+                
             except Exception as e:
                 print(f"Warning: Could not initialize TTS: {e}")
                 self.tts_engine = None
@@ -111,6 +120,18 @@ class VoiceManager:
     
     def speak(self, text: str) -> bool:
         """Convert text to speech"""
+        # Try eSpeak directly for Persian
+        try:
+            import subprocess
+            # Use eSpeak with Persian voice
+            subprocess.run(['espeak', '-v', 'fa', '-s', '150', text], 
+                         check=True, capture_output=True)
+            print(f"🔊 گفته شد: {text[:50]}...")
+            return True
+        except:
+            pass
+        
+        # Fallback to pyttsx3
         if not self.tts_engine:
             return False
         

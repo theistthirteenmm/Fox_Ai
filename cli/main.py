@@ -124,6 +124,8 @@ class PersonalAI:
 - `/learn <موضوع> <حقیقت>` - آموزش دانش جدید
 - `/learned` - نمایش آمار یادگیری
 - `/recall <موضوع>` - یادآوری مکالمات قبلی
+- `/voices` - نمایش صداهای موجود
+- `/voice_set <شماره>` - تغییر صدا
 - `/new` - شروع مکالمه جدید
 - `/clear` - پاک کردن مکالمه فعلی
 - `/quit` - خروج
@@ -336,7 +338,33 @@ class PersonalAI:
                 console.print(f"• کارهای روزمره: {stats['daily_routines']}")
                 return True
             
-            elif command == 'recall' or command == 'remember':
+            elif command == 'voices':
+                if self.voice.tts_engine:
+                    voices = self.voice.tts_engine.getProperty('voices')
+                    console.print("\n🔊 صداهای موجود:", style="bold cyan")
+                    for i, voice in enumerate(voices):
+                        current = "✅" if voice.id == self.voice.tts_engine.getProperty('voice') else "  "
+                        console.print(f"{current} {i}: {voice.name} ({voice.languages})")
+                    console.print("\nبرای تغییر صدا: /voice_set <شماره>", style="dim")
+                else:
+                    console.print("❌ TTS در دسترس نیست", style="red")
+                return True
+            
+            elif command == 'voice_set':
+                if parts and len(parts) > 1:
+                    try:
+                        voice_index = int(parts[1])
+                        voices = self.voice.tts_engine.getProperty('voices')
+                        if 0 <= voice_index < len(voices):
+                            self.voice.tts_engine.setProperty('voice', voices[voice_index].id)
+                            console.print(f"✅ صدا تغییر کرد به: {voices[voice_index].name}", style="green")
+                        else:
+                            console.print("❌ شماره صدا نامعتبر است", style="red")
+                    except:
+                        console.print("❌ شماره صدا نامعتبر است", style="red")
+                else:
+                    console.print("استفاده: /voice_set <شماره صدا>", style="yellow")
+                return True
                 if len(parts) > 1:
                     search_term = ' '.join(parts[1:])
                     try:
@@ -851,11 +879,6 @@ class PersonalAI:
     
     def speak_text(self, text: str):
         """Speak the given text"""
-        if not self.voice.is_available()['text_to_speech']:
-            console.print("❌ تولید گفتار در دسترس نیست", style="red")
-            console.print("برای نصب: pip install pyttsx3", style="yellow")
-            return
-        
         console.print(f"🔊 در حال گفتن: {text}", style="blue")
         success = self.voice.speak(text)
         
