@@ -345,9 +345,11 @@ class PersonalAI:
         table.add_row("سبک ارتباط", self.user_profile.profile.get('communication_style', 'friendly'), "/set style <سبک>")
         
         # Last interaction
-        last_interaction = self.user_profile.profile.get('last_interaction', 'هرگز')
-        if last_interaction != 'هرگز':
+        last_interaction = self.user_profile.profile.get('last_interaction')
+        if last_interaction:
             last_interaction = last_interaction[:19].replace('T', ' ')
+        else:
+            last_interaction = 'هرگز'
         table.add_row("آخرین تعامل", last_interaction, "خودکار")
         
         self.console.print(table)

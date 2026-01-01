@@ -4,12 +4,14 @@ class ChatApp {
         this.messageInput = document.getElementById('messageInput');
         this.sendButton = document.getElementById('sendButton');
         this.voiceButton = document.getElementById('voiceButton');
+        this.ttsToggle = document.getElementById('ttsToggle');
         this.messages = document.getElementById('messages');
         this.chatContainer = document.querySelector('.chat-container'); // Add chat container reference
         this.status = document.getElementById('status');
         this.typing = document.getElementById('typing');
         this.isRecording = false;
         this.recognition = null;
+        this.ttsEnabled = true; // TTS enabled by default
         
         this.init();
     }
@@ -25,6 +27,7 @@ class ChatApp {
     setupEventListeners() {
         this.sendButton.addEventListener('click', () => this.sendMessage());
         this.voiceButton.addEventListener('click', () => this.toggleVoiceRecording());
+        this.ttsToggle.addEventListener('click', () => this.toggleTTS());
         
         this.messageInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -198,6 +201,8 @@ class ChatApp {
             case 'message':
                 this.hideTyping();
                 this.addMessage(data.message, 'assistant');
+                // Add text-to-speech for Fox responses
+                this.speakText(data.message);
                 break;
             case 'error':
                 this.hideTyping();
@@ -297,6 +302,52 @@ class ChatApp {
             hour: '2-digit',
             minute: '2-digit'
         });
+    }
+    
+    speakText(text) {
+        // Text-to-Speech for Fox responses
+        if ('speechSynthesis' in window && this.ttsEnabled) {
+            // Cancel any ongoing speech
+            speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            // Try to find Persian voice, fallback to default
+            const voices = speechSynthesis.getVoices();
+            const persianVoice = voices.find(voice => 
+                voice.lang.includes('fa') || 
+                voice.lang.includes('persian') ||
+                voice.name.toLowerCase().includes('persian')
+            );
+            
+            if (persianVoice) {
+                utterance.voice = persianVoice;
+            }
+            
+            utterance.rate = 0.9;
+            utterance.pitch = 1.0;
+            utterance.volume = 0.8;
+            
+            speechSynthesis.speak(utterance);
+        }
+    }
+    
+    toggleTTS() {
+        this.ttsEnabled = !this.ttsEnabled;
+        
+        if (this.ttsEnabled) {
+            this.ttsToggle.textContent = '🔊';
+            this.ttsToggle.title = 'خاموش کردن صدا';
+            this.ttsToggle.classList.remove('disabled');
+        } else {
+            this.ttsToggle.textContent = '🔇';
+            this.ttsToggle.title = 'روشن کردن صدا';
+            this.ttsToggle.classList.add('disabled');
+            // Cancel any ongoing speech
+            if ('speechSynthesis' in window) {
+                speechSynthesis.cancel();
+            }
+        }
     }
     
     setWelcomeTime() {
