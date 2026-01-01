@@ -116,6 +116,7 @@ class PersonalAI:
 - `/experience` - نمایش تجربه و سن Fox
 - `/boost <ماه>` - تقویت هوش Fox
 - `/age <روز>` - پیر کردن Fox
+- `/pretrain` - پیش‌آموزش Fox با دیتاست
 - `/new` - شروع مکالمه جدید
 - `/clear` - پاک کردن مکالمه فعلی
 - `/quit` - خروج
@@ -280,6 +281,10 @@ class PersonalAI:
                         console.print("❌ لطفاً عدد صحیح وارد کنید", style="red")
                 else:
                     self.age_fox(30)  # Default 30 days = 1 month
+                return True
+            
+            elif command == 'pretrain':
+                self.pretrain_fox()
                 return True
             
             elif command == 'new':
@@ -567,6 +572,68 @@ class PersonalAI:
         
         # Update fox_personality with new profile
         self.fox_personality = FoxPersonality(self.user_profile)
+    
+    def pretrain_fox(self):
+        """پیش‌آموزش Fox با دیتاست کامل"""
+        if not self.fox_experience:
+            self.console.print("سیستم تجربه در دسترس نیست.", style="red")
+            return
+        
+        # بررسی اینکه قبلاً پیش‌آموزش شده یا نه
+        if self.user_profile.profile.get('pretrained', False):
+            self.console.print("⚠️ Fox قبلاً پیش‌آموزش شده است!", style="yellow")
+            return
+        
+        # اضافه کردن تجربه پایه (معادل 3 ماه)
+        base_experience = 2700  # 90 روز × 30 تعامل
+        
+        old_interactions = self.user_profile.profile['interaction_count']
+        old_level = self.user_profile.profile['relationship_level']
+        
+        # بروزرسانی پروفایل
+        self.user_profile.profile.update({
+            'interaction_count': old_interactions + base_experience,
+            'relationship_level': min(10, old_level + 5),
+            'artificial_experience': self.user_profile.profile.get('artificial_experience', 0) + base_experience,
+            'pretrained': True,
+            'pretrain_date': datetime.now().isoformat()
+        })
+        
+        # اضافه کردن ویژگی‌های پیش‌آموزش
+        current_traits = self.user_profile.profile.get('personality_traits', [])
+        pretrain_traits = ['آموزش‌دیده', 'دانشمند', 'پاسخگو']
+        
+        for trait in pretrain_traits:
+            if trait not in current_traits:
+                current_traits.append(trait)
+        
+        self.user_profile.profile['personality_traits'] = current_traits
+        
+        # اضافه کردن علایق پایه
+        base_interests = ['گفتگو', 'یادگیری', 'کمک‌رسانی']
+        current_interests = self.user_profile.profile.get('interests', [])
+        
+        for interest in base_interests:
+            if interest not in current_interests:
+                current_interests.append(interest)
+        
+        self.user_profile.profile['interests'] = current_interests
+        
+        self.user_profile.save_profile()
+        
+        # نمایش نتایج
+        self.console.print("🎓 Fox با دیتاست کامل پیش‌آموزش شد!", style="bold green")
+        self.console.print(f"• تجربه اضافه شده: {base_experience} (معادل 3 ماه)", style="green")
+        self.console.print(f"• سطح رابطه: {old_level} → {self.user_profile.profile['relationship_level']}", style="cyan")
+        self.console.print(f"• تعامل: {old_interactions} → {self.user_profile.profile['interaction_count']}", style="yellow")
+        self.console.print(f"• ویژگی‌های جدید: {', '.join(pretrain_traits)}", style="magenta")
+        self.console.print(f"• علایق پایه: {', '.join(base_interests)}", style="blue")
+        
+        # بروزرسانی شخصیت
+        self.fox_personality = FoxPersonality(self.user_profile)
+        self.fox_experience = FoxExperienceSystem(self.user_profile)
+        
+        self.console.print("\n🧠 Fox حالا با دانش کاملی آماده صحبت است!", style="bold blue")
     
     def start_voice_conversation(self):
         """Start voice conversation mode"""
