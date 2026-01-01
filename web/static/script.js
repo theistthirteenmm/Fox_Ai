@@ -59,12 +59,20 @@ class ChatApp {
             menu.className = 'command-menu';
             menu.innerHTML = `
                 <div class="command-item" data-cmd="/help">📚 /help - نمایش راهنما</div>
-                <div class="command-item" data-cmd="/recall ">🧠 /recall - یادآوری مکالمات قبلی</div>
+                <div class="command-item" data-cmd="/models">🤖 /models - لیست مدلها</div>
+                <div class="command-item" data-cmd="/history">📜 /history - تاریخچه مکالمات</div>
+                <div class="command-item" data-cmd="/search ">🔍 /search - جستجو در تاریخچه</div>
+                <div class="command-item" data-cmd="/memory">🧠 /memory - نمایش حافظه</div>
+                <div class="command-item" data-cmd="/recall ">🧠 /recall - یادآوری مکالمات</div>
                 <div class="command-item" data-cmd="/teach ">🎓 /teach - آموزش پاسخ خاص</div>
                 <div class="command-item" data-cmd="/learn ">📖 /learn - آموزش دانش جدید</div>
                 <div class="command-item" data-cmd="/learned">📊 /learned - آمار یادگیری</div>
                 <div class="command-item" data-cmd="/mood">😊 /mood - وضعیت احساسی</div>
+                <div class="command-item" data-cmd="/status">📊 /status - وضعیت کامل</div>
+                <div class="command-item" data-cmd="/experience">📈 /experience - تجربه Fox</div>
                 <div class="command-item" data-cmd="/web ">🌐 /web - جستجو در اینترنت</div>
+                <div class="command-item" data-cmd="/news ">📰 /news - دریافت اخبار</div>
+                <div class="command-item" data-cmd="/weather ">🌤️ /weather - آب و هوا</div>
             `;
             
             menu.addEventListener('click', (e) => {
@@ -74,7 +82,8 @@ class ChatApp {
                     this.hideCommandMenu();
                     
                     // Auto-send simple commands, focus for complex ones
-                    if (cmd === '/help' || cmd === '/learned' || cmd === '/mood') {
+                    if (cmd === '/help' || cmd === '/learned' || cmd === '/mood' || cmd === '/models' || 
+                        cmd === '/history' || cmd === '/memory' || cmd === '/status' || cmd === '/experience') {
                         this.sendMessage();
                     } else {
                         this.messageInput.focus();

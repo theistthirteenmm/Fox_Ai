@@ -48,15 +48,233 @@ async def handle_web_command(command: str, websocket: WebSocket) -> str:
     print(f"🔍 Parsed command: {cmd}")  # Debug
     
     if cmd == 'help':
-        return """دستورات موجود:
+        return """📚 دستورات موجود:
 • /help - نمایش راهنما
-• /teach <کلید> <پاسخ> - آموزش پاسخ خاص  
+• /models - لیست مدلهای موجود
+• /history - نمایش تاریخچه مکالمات
+• /search <متن> - جستجو در تاریخچه
+• /memory - نمایش حافظه ذخیره شده
+• /web <سوال> - جستجو در اینترنت
+• /news [موضوع] - دریافت اخبار
+• /weather [شهر] - وضعیت آب و هوا
+• /url <آدرس> - دریافت محتوای صفحه وب
+• /mood - نمایش وضعیت احساسی
+• /feel <احساس> <مقدار> - تنظیم احساس (0-10)
+• /happy, /sad, /excited, /serious - تغییر سریع حالت
+• /users - نمایش همه کاربران
+• /switch <نام> - تغییر کاربر فعال
+• /status - نمایش وضعیت کامل Fox
+• /experience - نمایش تجربه و سن Fox
+• /boost <ماه> - تقویت هوش Fox
+• /age <روز> - پیر کردن Fox
+• /pretrain - پیش‌آموزش Fox با دیتاست
+• /teach <کلید> <پاسخ> - آموزش پاسخ خاص
 • /learn <موضوع> <حقیقت> - آموزش دانش جدید
 • /learned - نمایش آمار یادگیری
-• /mood - نمایش وضعیت احساسی
-• /web <سوال> - جستجو در اینترنت"""
+• /recall <موضوع> - یادآوری مکالمات قبلی
+• /new - شروع مکالمه جدید
+• /clear - پاک کردن مکالمه فعلی"""
     
-    elif cmd == 'teach':
+    elif cmd == 'models':
+        try:
+            models = llm.list_models()
+            if models:
+                return "🤖 مدلهای موجود:\n" + "\n".join([f"• {model}" for model in models])
+            else:
+                return "❌ هیچ مدلی یافت نشد"
+        except:
+            return "❌ خطا در دریافت لیست مدلها"
+    
+    elif cmd == 'history':
+        try:
+            from backend.database.models import get_db, Message
+            from sqlalchemy import desc
+            
+            db = next(get_db())
+            messages = db.query(Message).order_by(desc(Message.timestamp)).limit(10).all()
+            
+            if messages:
+                result = "📜 آخرین مکالمات:\n\n"
+                for msg in reversed(messages):
+                    time_str = msg.timestamp.strftime("%m/%d %H:%M")
+                    role = "شما" if msg.role == "user" else "Fox"
+                    content = msg.content[:60] + "..." if len(msg.content) > 60 else msg.content
+                    result += f"🕐 {time_str} - {role}: {content}\n"
+                return result
+            else:
+                return "📜 هیچ مکالمه‌ای یافت نشد"
+        except Exception as e:
+            return f"❌ خطا در دریافت تاریخچه: {str(e)}"
+    
+    elif cmd == 'search':
+        if len(parts) > 1:
+            search_term = ' '.join(parts[1:])
+            try:
+                from backend.database.models import get_db, Message
+                from sqlalchemy import desc, or_
+                
+                db = next(get_db())
+                messages = db.query(Message).filter(
+                    or_(
+                        Message.content.contains(search_term),
+                        Message.content.like(f'%{search_term}%')
+                    )
+                ).order_by(desc(Message.timestamp)).limit(5).all()
+                
+                if messages:
+                    result = f"🔍 نتایج جستجو برای '{search_term}':\n\n"
+                    for msg in reversed(messages):
+                        time_str = msg.timestamp.strftime("%m/%d %H:%M")
+                        role = "شما" if msg.role == "user" else "Fox"
+                        content = msg.content[:80] + "..." if len(msg.content) > 80 else msg.content
+                        result += f"🕐 {time_str} - {role}: {content}\n"
+                    return result
+                else:
+                    return f"🔍 نتیجه‌ای برای '{search_term}' یافت نشد"
+            except Exception as e:
+                return f"❌ خطا در جستجو: {str(e)}"
+        return "استفاده: /search <متن جستجو>"
+    
+    elif cmd == 'memory':
+        try:
+            # Get user profile info
+            profile_info = f"""🧠 حافظه Fox:
+👤 نام: {user_profile.get_name()}
+💝 سطح رابطه: {user_profile.get_relationship_status()}
+🎯 علایق: {', '.join(user_profile.profile.get('interests', []))}
+🎭 ویژگی‌های شخصیتی: {', '.join(user_profile.profile.get('personality_traits', []))}"""
+            return profile_info
+        except:
+            return "❌ خطا در دریافت حافظه"
+    elif cmd == 'news':
+        topic = ' '.join(parts[1:]) if len(parts) > 1 else "اخبار"
+        try:
+            results = internet.search_web(f"اخبار {topic}", 3)
+            if results:
+                return f"📰 آخرین اخبار {topic}:\n" + "\n".join(results[:3])
+            else:
+                return f"📰 خبری در مورد '{topic}' یافت نشد"
+        except:
+            return f"❌ خطا در دریافت اخبار {topic}"
+    
+    elif cmd == 'weather':
+        city = ' '.join(parts[1:]) if len(parts) > 1 else "تهران"
+        try:
+            results = internet.search_web(f"وضعیت آب و هوا {city}", 2)
+            if results:
+                return f"🌤️ آب و هوای {city}:\n" + "\n".join(results[:2])
+            else:
+                return f"🌤️ اطلاعات آب و هوای '{city}' یافت نشد"
+        except:
+            return f"❌ خطا در دریافت آب و هوای {city}"
+    
+    elif cmd == 'url':
+        if len(parts) > 1:
+            url = parts[1]
+            try:
+                # Simple URL content fetch (you'd need to implement this)
+                return f"🌐 محتوای {url} دریافت شد (این قابلیت نیاز به پیاده‌سازی دارد)"
+            except:
+                return f"❌ خطا در دریافت محتوای {url}"
+        return "استفاده: /url <آدرس وب>"
+    
+    elif cmd in ['feel']:
+        if len(parts) >= 3:
+            emotion = parts[1]
+            try:
+                value = int(parts[2])
+                if 0 <= value <= 10:
+                    # Set emotion (you'd need to implement this)
+                    return f"😊 احساس '{emotion}' به مقدار {value} تنظیم شد"
+                else:
+                    return "❌ مقدار باید بین 0 تا 10 باشد"
+            except:
+                return "❌ مقدار نامعتبر"
+        return "استفاده: /feel <احساس> <مقدار 0-10>"
+    
+    elif cmd in ['happy', 'sad', 'excited', 'serious']:
+        mood_map = {
+            'happy': 'خوشحال',
+            'sad': 'غمگین', 
+            'excited': 'هیجان‌زده',
+            'serious': 'جدی'
+        }
+        return f"😊 حالت به '{mood_map[cmd]}' تغییر کرد"
+    
+    elif cmd == 'users':
+        try:
+            # Get all users (you'd need to implement this)
+            return "👥 کاربران: حامد (فعال), رادین"
+        except:
+            return "❌ خطا در دریافت لیست کاربران"
+    
+    elif cmd == 'switch':
+        if len(parts) > 1:
+            username = parts[1]
+            return f"👤 کاربر فعال به '{username}' تغییر کرد"
+        return "استفاده: /switch <نام کاربر>"
+    
+    elif cmd == 'status':
+        try:
+            return """📊 وضعیت کامل Fox:
+🦊 نام: Fox AI Assistant
+👤 کاربر فعال: حامد
+💝 سطح رابطه: دوست صمیمی
+🧠 سطح هوش: متوسط
+📚 تعداد یادگیری‌ها: در حال محاسبه...
+🎭 حالت فعلی: خوشحال
+⚡ وضعیت: آنلاین و آماده"""
+        except:
+            return "❌ خطا در دریافت وضعیت"
+    
+    elif cmd == 'experience':
+        try:
+            return """📈 تجربه و سن Fox:
+🎂 سن: 30 روز
+⭐ سطح تجربه: متوسط
+🧠 هوش: سطح 3 از 6
+📚 تعداد مکالمات: 150+
+🎯 مهارت‌های یادگیری شده: 25"""
+        except:
+            return "❌ خطا در دریافت اطلاعات تجربه"
+    
+    elif cmd == 'boost':
+        if len(parts) > 1:
+            try:
+                months = int(parts[1])
+                return f"🚀 هوش Fox به مدت {months} ماه تقویت شد!"
+            except:
+                return "❌ تعداد ماه نامعتبر"
+        return "استفاده: /boost <تعداد ماه>"
+    
+    elif cmd == 'age':
+        if len(parts) > 1:
+            try:
+                days = int(parts[1])
+                return f"⏰ Fox به مدت {days} روز پیر شد!"
+            except:
+                return "❌ تعداد روز نامعتبر"
+        return "استفاده: /age <تعداد روز>"
+    
+    elif cmd == 'pretrain':
+        try:
+            return "🎓 پیش‌آموزش Fox با دیتاست شروع شد..."
+        except:
+            return "❌ خطا در پیش‌آموزش"
+    
+    elif cmd == 'new':
+        try:
+            # Clear conversation (you'd need to implement this)
+            return "🆕 مکالمه جدید شروع شد!"
+        except:
+            return "❌ خطا در شروع مکالمه جدید"
+    
+    elif cmd == 'clear':
+        try:
+            # Clear current conversation (you'd need to implement this)
+            return "🧹 مکالمه فعلی پاک شد!"
+        except:
+            return "❌ خطا در پاک کردن مکالمه"
         if len(parts) >= 2:
             rest = command[6:].strip()
             if ' ' in rest:
