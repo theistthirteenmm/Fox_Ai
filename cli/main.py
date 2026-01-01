@@ -366,8 +366,36 @@ class PersonalAI:
             # Add user message
             self.conversation.add_message("user", text)
             
-            # Check for web search
-            if any(keyword in text.lower() for keyword in ['جستجو کن', 'search', 'اینترنت', 'آخرین اخبار']):
+            # Check for web search - expanded keywords
+            web_keywords = [
+                # Persian
+                'جستجو کن', 'سرچ کن', 'اینترنت', 'آخرین اخبار', 'خبر', 'قیمت', 
+                'آب و هوا', 'هوا', 'امروز', 'الان', 'فعلی', 'جدید', 'تازه',
+                'چند', 'چقدر', 'کی', 'کجا', 'چطور', 'آخرین', 'جدیدترین',
+                # English  
+                'search', 'internet', 'news', 'price', 'weather', 'current',
+                'latest', 'today', 'now', 'how much', 'what is', 'when',
+                'where', 'how', 'recent'
+            ]
+            
+            # Also check for question patterns that likely need internet
+            question_patterns = [
+                'قیمت', 'نرخ', 'چند تومان', 'چند درهم', 'چند دلار',
+                'آب و هوا', 'دما', 'بارش', 'باران', 'برف',
+                'اخبار', 'خبر', 'چه خبر', 'آخرین خبر',
+                'کرونا', 'کووید', 'ویروس', 'بیماری',
+                'انتخابات', 'سیاست', 'دولت', 'رئیس جمهور',
+                'ورزش', 'فوتبال', 'جام جهانی', 'المپیک',
+                'بورس', 'سهام', 'ارز', 'طلا', 'سکه', 'دلار', 'یورو'
+            ]
+            
+            needs_web_search = (
+                any(keyword in text.lower() for keyword in web_keywords) or
+                any(pattern in text.lower() for pattern in question_patterns) or
+                ('?' in text and len(text.split()) > 2)  # Questions longer than 2 words
+            )
+            
+            if needs_web_search:
                 web_results = self.internet.search_web(text, 3)
                 if web_results:
                     web_context = "نتایج جستجو در اینترنت:\n"
