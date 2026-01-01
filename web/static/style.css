@@ -10,18 +10,38 @@ body {
     font-family: 'Vazirmatn', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile */
     direction: rtl;
     font-weight: 400;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .container {
     max-width: 800px;
     margin: 0 auto;
     height: 100vh;
+    height: 100dvh; /* Dynamic viewport height */
     display: flex;
     flex-direction: column;
     background: white;
     box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .container {
+        max-width: 100%;
+        height: 100vh;
+        height: 100dvh;
+        border-radius: 0;
+        box-shadow: none;
+    }
 }
 
 header {
@@ -31,6 +51,22 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* Mobile header */
+@media (max-width: 768px) {
+    header {
+        padding: 0.75rem 1rem;
+        min-height: 60px;
+    }
+    
+    header h1 {
+        font-size: 1.2rem;
+    }
 }
 
 .header-controls {
@@ -95,6 +131,18 @@ header h1 {
     overflow-y: auto;
     padding: 1rem;
     background: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+/* Mobile chat container */
+@media (max-width: 768px) {
+    .chat-container {
+        padding: 0.75rem;
+        flex: 1;
+        min-height: 0;
+    }
 }
 
 .messages {
@@ -107,6 +155,17 @@ header h1 {
     display: flex;
     flex-direction: column;
     max-width: 70%;
+    margin-bottom: 1rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Mobile message optimization */
+@media (max-width: 768px) {
+    .message {
+        max-width: 85%;
+        margin-bottom: 0.75rem;
+    }
 }
 
 .message.user {
@@ -124,6 +183,16 @@ header h1 {
     word-wrap: break-word;
     font-family: 'Vazirmatn', sans-serif;
     font-weight: 400;
+    font-size: 0.95rem;
+}
+
+/* Mobile message content */
+@media (max-width: 768px) {
+    .message-content {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
 }
 
 .message.user .message-content {
@@ -179,12 +248,31 @@ header h1 {
     padding: 1rem;
     background: white;
     border-top: 1px solid #dee2e6;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+}
+
+/* Mobile input container */
+@media (max-width: 768px) {
+    .input-container {
+        padding: 0.75rem;
+        /* Safe area for iPhone notch */
+        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    }
 }
 
 .input-wrapper {
     display: flex;
     gap: 0.5rem;
     align-items: flex-end;
+}
+
+/* Mobile input wrapper */
+@media (max-width: 768px) {
+    .input-wrapper {
+        gap: 0.4rem;
+    }
 }
 
 #messageInput {
@@ -219,6 +307,18 @@ header h1 {
     justify-content: center;
     transition: all 0.2s;
     margin-left: 0.5rem;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile voice button */
+@media (max-width: 768px) {
+    #voiceButton {
+        width: 48px;
+        height: 48px;
+        margin-left: 0.3rem;
+        font-size: 1.1rem;
+    }
 }
 
 #voiceButton:hover {

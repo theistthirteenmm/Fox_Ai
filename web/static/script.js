@@ -131,12 +131,23 @@ class ChatApp {
     }
     
     toggleVoiceRecording() {
-        if (!this.recognition) return;
+        if (!this.recognition) {
+            alert('تشخیص گفتار در این مرورگر پشتیبانی نمی‌شود');
+            return;
+        }
         
         if (this.isRecording) {
             this.recognition.stop();
         } else {
-            this.recognition.start();
+            // Request microphone permission first
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(() => {
+                    this.recognition.start();
+                })
+                .catch((error) => {
+                    console.error('Microphone permission denied:', error);
+                    alert('لطفاً دسترسی میکروفن را در تنظیمات مرورگر فعال کنید و صفحه را رفرش کنید');
+                });
         }
     }
     
