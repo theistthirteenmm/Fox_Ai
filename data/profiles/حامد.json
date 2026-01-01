@@ -7,13 +7,18 @@
   ],
   "personality_traits": [
     "کنجکاو",
-    "شوخ‌طبع"
+    "شوخ‌طبع",
+    "باتجربه",
+    "دانا",
+    "حکیم"
   ],
-  "relationship_level": 1,
+  "relationship_level": 10,
   "favorite_topics": [],
   "communication_style": "friendly",
   "created_at": "2026-01-01T05:54:58.262095",
   "last_interaction": null,
-  "interaction_count": 0,
-  "memories": []
+  "interaction_count": 5400,
+  "memories": [],
+  "artificial_experience": 5400,
+  "last_experience_boost": "2026-01-01T06:43:14.057779"
 }

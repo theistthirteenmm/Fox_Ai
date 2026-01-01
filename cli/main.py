@@ -21,6 +21,7 @@ from backend.core.personality import PersonalitySystem
 from backend.core.user_profile import UserProfile, FoxPersonality
 from backend.core.introduction import FoxIntroduction
 from backend.core.multi_user import MultiUserManager
+from backend.core.fox_experience import FoxExperienceSystem
 from backend.config.settings import settings
 
 console = Console()
@@ -48,10 +49,12 @@ class PersonalAI:
         # Setup user profile and personality
         if self.user_profile:
             self.fox_personality = FoxPersonality(self.user_profile)
+            self.fox_experience = FoxExperienceSystem(self.user_profile)
             if self.user_profile.is_first_time():
                 self.introduction = FoxIntroduction(self.user_profile)
         else:
             # No users yet, will be handled in first interaction
+            self.fox_experience = None
             pass
         
     def display_welcome(self):        
@@ -110,6 +113,9 @@ class PersonalAI:
 - `/switch <نام>` - تغییر کاربر فعال
 - `/status` - نمایش وضعیت کامل Fox
 - `/set <پارامتر> <مقدار>` - تغییر تنظیمات
+- `/experience` - نمایش تجربه و سن Fox
+- `/boost <ماه>` - تقویت هوش Fox
+- `/age <روز>` - پیر کردن Fox
 - `/new` - شروع مکالمه جدید
 - `/clear` - پاک کردن مکالمه فعلی
 - `/quit` - خروج
@@ -248,6 +254,32 @@ class PersonalAI:
                 else:
                     console.print("استفاده: /set <پارامتر> <مقدار>", style="yellow")
                     console.print("مثال: /set relationship 5", style="dim")
+                return True
+            
+            elif command == 'experience':
+                self.show_experience()
+                return True
+            
+            elif command == 'boost':
+                if parts and len(parts) > 1:
+                    try:
+                        months = int(parts[1])
+                        self.boost_fox(months)
+                    except ValueError:
+                        console.print("❌ لطفاً عدد صحیح وارد کنید", style="red")
+                else:
+                    self.boost_fox(1)  # Default 1 month
+                return True
+            
+            elif command == 'age':
+                if parts and len(parts) > 1:
+                    try:
+                        days = int(parts[1])
+                        self.age_fox(days)
+                    except ValueError:
+                        console.print("❌ لطفاً عدد صحیح وارد کنید", style="red")
+                else:
+                    self.age_fox(30)  # Default 30 days = 1 month
                 return True
             
             elif command == 'new':
@@ -450,6 +482,91 @@ class PersonalAI:
             self.console.print("❌ مقدار نامعتبر. لطفاً عدد صحیح وارد کنید.", style="red")
         except Exception as e:
             self.console.print(f"❌ خطا: {e}", style="red")
+    
+    def show_experience(self):
+        """نمایش تجربه و سن Fox"""
+        if not self.fox_experience:
+            self.console.print("سیستم تجربه در دسترس نیست.", style="red")
+            return
+        
+        exp_data = self.fox_experience.get_experience_level()
+        
+        # Experience table
+        table = Table(title="🧠 تجربه و سن Fox", show_header=True, header_style="bold cyan")
+        table.add_column("ویژگی", style="yellow", width=20)
+        table.add_column("مقدار", style="green", width=25)
+        table.add_column("توضیح", style="blue", width=30)
+        
+        table.add_row("سن (روز)", str(exp_data['days_old']), f"معادل {exp_data['days_old']} روز زندگی")
+        table.add_row("سن (ماه)", str(exp_data['months_old']), f"معادل {exp_data['months_old']} ماه تجربه")
+        table.add_row("سن (سال)", str(exp_data['years_old']), f"معادل {exp_data['years_old']} سال دانش")
+        
+        table.add_row("سطح تجربه", exp_data['experience_level'], "میزان دانش و تجربه")
+        table.add_row("کل تعامل", str(exp_data['total_interactions']), "تعداد کل مکالمات")
+        table.add_row("تجربه واقعی", str(exp_data['real_experience']), "از مکالمات واقعی")
+        table.add_row("تجربه مصنوعی", str(exp_data['artificial_experience']), "از تقویت هوش")
+        
+        self.console.print(table)
+        
+        # Experience levels explanation
+        levels_table = Table(title="📊 سطوح تجربه", show_header=True, header_style="bold magenta")
+        levels_table.add_column("سطح", style="cyan")
+        levels_table.add_column("تعامل مورد نیاز", style="yellow")
+        levels_table.add_column("توانایی‌ها", style="green")
+        
+        levels_table.add_row("تازه‌کار", "0-100", "پاسخ‌های ساده")
+        levels_table.add_row("مبتدی", "100-500", "درک بهتر مکالمه")
+        levels_table.add_row("متوسط", "500-1000", "پاسخ‌های متنوع")
+        levels_table.add_row("پیشرفته", "1000-2000", "درک عمیق‌تر")
+        levels_table.add_row("خبره", "2000-5000", "پاسخ‌های پیچیده")
+        levels_table.add_row("استاد", "5000+", "حکمت و تجربه بالا")
+        
+        self.console.print(levels_table)
+        
+        # Commands help
+        self.console.print("\n💡 دستورات تجربه:", style="bold")
+        self.console.print("• /boost 3 - تقویت هوش معادل 3 ماه", style="dim")
+        self.console.print("• /age 90 - پیر کردن معادل 90 روز", style="dim")
+    
+    def boost_fox(self, months: int):
+        """تقویت هوش Fox"""
+        if not self.fox_experience:
+            self.console.print("سیستم تجربه در دسترس نیست.", style="red")
+            return
+        
+        if months < 1 or months > 12:
+            self.console.print("❌ تعداد ماه باید بین 1 تا 12 باشد", style="red")
+            return
+        
+        result = self.fox_experience.boost_fox_intelligence(months)
+        
+        self.console.print(f"🚀 Fox {months} ماه باهوش‌تر شد!", style="bold green")
+        self.console.print(f"• تجربه اضافه شده: {result['experience_gained']}", style="green")
+        self.console.print(f"• سطح رابطه: {result['old_level']} → {result['new_level']}", style="cyan")
+        self.console.print(f"• تعامل: {result['old_interactions']} → {result['new_interactions']}", style="yellow")
+        
+        # Update fox_personality with new profile
+        self.fox_personality = FoxPersonality(self.user_profile)
+    
+    def age_fox(self, days: int):
+        """پیر کردن Fox"""
+        if not self.fox_experience:
+            self.console.print("سیستم تجربه در دسترس نیست.", style="red")
+            return
+        
+        if days < 1 or days > 365:
+            self.console.print("❌ تعداد روز باید بین 1 تا 365 باشد", style="red")
+            return
+        
+        result = self.fox_experience.accelerate_experience(days)
+        
+        self.console.print(f"⏰ Fox {days} روز پیرتر شد!", style="bold blue")
+        self.console.print(f"• تجربه اضافه شده: {result['experience_gained']}", style="blue")
+        self.console.print(f"• سطح رابطه: {result['old_level']} → {result['new_level']}", style="cyan")
+        self.console.print(f"• تعامل: {result['old_interactions']} → {result['new_interactions']}", style="yellow")
+        
+        # Update fox_personality with new profile
+        self.fox_personality = FoxPersonality(self.user_profile)
     
     def start_voice_conversation(self):
         """Start voice conversation mode"""
