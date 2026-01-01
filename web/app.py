@@ -144,15 +144,23 @@ async def websocket_endpoint(websocket: WebSocket):
             try:
                 # Check for commands
                 if user_message.startswith('/'):
-                    command_response = await handle_web_command(user_message, websocket)
-                    if command_response:
+                    try:
+                        command_response = await handle_web_command(user_message, websocket)
+                        if command_response:
+                            await websocket.send_text(json.dumps({
+                                "type": "message",
+                                "message": command_response
+                            }))
+                            continue
+                    except Exception as e:
+                        print(f"❌ Command error: {e}")
                         await websocket.send_text(json.dumps({
-                            "type": "message",
-                            "message": command_response
+                            "type": "message", 
+                            "message": f"خطا در اجرای دستور"
                         }))
                         continue
-            
-            # Check if user is asking for web search
+                
+                # Check if user is asking for web search
                 if any(keyword in user_message.lower() for keyword in ['جستجو کن', 'search', 'اینترنت', 'آخرین اخبار', 'خبر', 'وضعیت آب و هوا']):
                     # Add web search results to context
                     web_results = internet.search_web(user_message, 3)
