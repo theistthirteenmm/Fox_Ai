@@ -108,6 +108,8 @@ class PersonalAI:
 - `/happy`, `/sad`, `/excited`, `/serious` - تغییر سریع حالت
 - `/users` - نمایش همه کاربران
 - `/switch <نام>` - تغییر کاربر فعال
+- `/status` - نمایش وضعیت کامل Fox
+- `/set <پارامتر> <مقدار>` - تغییر تنظیمات
 - `/new` - شروع مکالمه جدید
 - `/clear` - پاک کردن مکالمه فعلی
 - `/quit` - خروج
@@ -234,6 +236,20 @@ class PersonalAI:
                     console.print("استفاده: /switch <نام کاربر>", style="yellow")
                 return True
             
+            elif command == 'status':
+                self.show_status()
+                return True
+            
+            elif command == 'set':
+                if parts and len(parts) >= 3:
+                    param = parts[1].lower()
+                    value = ' '.join(parts[2:])
+                    self.set_parameter(param, value)
+                else:
+                    console.print("استفاده: /set <پارامتر> <مقدار>", style="yellow")
+                    console.print("مثال: /set relationship 5", style="dim")
+                return True
+            
             elif command == 'new':
                 session_id = self.conversation.start_new_session()
                 console.print(f"✅ مکالمه جدید شروع شد: {session_id[:8]}...", style="green")
@@ -299,6 +315,139 @@ class PersonalAI:
             
         except Exception as e:
             self.console.print(f"خطا در تغییر کاربر: {e}", style="red")
+    
+    def show_status(self):
+        """نمایش وضعیت کامل Fox"""
+        if not self.user_profile:
+            self.console.print("هیچ کاربری فعال نیست.", style="yellow")
+            return
+        
+        # User info
+        table = Table(title="📊 وضعیت کامل Fox", show_header=True, header_style="bold magenta")
+        table.add_column("پارامتر", style="cyan", width=20)
+        table.add_column("مقدار فعلی", style="green", width=30)
+        table.add_column("دستور تغییر", style="yellow", width=25)
+        
+        # Basic info
+        table.add_row("نام کاربر", self.user_profile.get_name(), "/set name <نام>")
+        table.add_row("سطح رابطه", f"{self.user_profile.get_relationship_status()} ({self.user_profile.profile['relationship_level']}/10)", "/set relationship <0-10>")
+        table.add_row("تعداد تعامل", str(self.user_profile.profile['interaction_count']), "/set interactions <عدد>")
+        
+        # Interests
+        interests = ', '.join(self.user_profile.profile['interests']) if self.user_profile.profile['interests'] else 'هیچ'
+        table.add_row("علایق", interests, "/set interests <لیست>")
+        
+        # Personality traits
+        traits = ', '.join(self.user_profile.profile['personality_traits']) if self.user_profile.profile['personality_traits'] else 'هیچ'
+        table.add_row("ویژگی‌های شخصیتی", traits, "/set traits <لیست>")
+        
+        # Communication style
+        table.add_row("سبک ارتباط", self.user_profile.profile.get('communication_style', 'friendly'), "/set style <سبک>")
+        
+        # Last interaction
+        last_interaction = self.user_profile.profile.get('last_interaction', 'هرگز')
+        if last_interaction != 'هرگز':
+            last_interaction = last_interaction[:19].replace('T', ' ')
+        table.add_row("آخرین تعامل", last_interaction, "خودکار")
+        
+        self.console.print(table)
+        
+        # Personality/Mood status
+        mood_table = Table(title="🎭 وضعیت احساسی", show_header=True, header_style="bold blue")
+        mood_table.add_column("احساس", style="cyan", width=15)
+        mood_table.add_column("مقدار", style="green", width=10)
+        mood_table.add_column("نمودار", style="yellow", width=20)
+        mood_table.add_column("دستور تغییر", style="magenta", width=20)
+        
+        emotions = self.personality.get_current_emotions()
+        for emotion, value in emotions.items():
+            bar = "█" * int(value) + "░" * (10 - int(value))
+            persian_emotion = {
+                'happiness': 'خوشحالی',
+                'sadness': 'غم', 
+                'anger': 'عصبانیت',
+                'excitement': 'هیجان',
+                'humor': 'شوخی',
+                'seriousness': 'جدیت',
+                'friendliness': 'صمیمیت',
+                'curiosity': 'کنجکاوی'
+            }.get(emotion, emotion)
+            
+            mood_table.add_row(persian_emotion, f"{value}/10", bar, f"/feel {emotion} <0-10>")
+        
+        self.console.print(mood_table)
+        
+        # Usage examples
+        self.console.print("\n💡 مثال‌های استفاده:", style="bold")
+        self.console.print("• /set relationship 8 - افزایش سطح رابطه", style="dim")
+        self.console.print("• /set interests برنامه‌نویسی,موسیقی,ورزش - تغییر علایق", style="dim")
+        self.console.print("• /feel happiness 9 - افزایش خوشحالی", style="dim")
+    
+    def set_parameter(self, param: str, value: str):
+        """تنظیم پارامترهای Fox"""
+        if not self.user_profile:
+            self.console.print("هیچ کاربری فعال نیست.", style="red")
+            return
+        
+        try:
+            if param == 'name':
+                old_name = self.user_profile.get_name()
+                self.user_profile.profile['name'] = value
+                self.user_profile.save_profile()
+                self.console.print(f"✅ نام از '{old_name}' به '{value}' تغییر یافت", style="green")
+            
+            elif param == 'relationship':
+                level = int(value)
+                if 0 <= level <= 10:
+                    old_level = self.user_profile.profile['relationship_level']
+                    self.user_profile.profile['relationship_level'] = level
+                    self.user_profile.save_profile()
+                    self.console.print(f"✅ سطح رابطه از {old_level} به {level} تغییر یافت", style="green")
+                else:
+                    self.console.print("❌ سطح رابطه باید بین 0 تا 10 باشد", style="red")
+            
+            elif param == 'interactions':
+                count = int(value)
+                if count >= 0:
+                    old_count = self.user_profile.profile['interaction_count']
+                    self.user_profile.profile['interaction_count'] = count
+                    self.user_profile.save_profile()
+                    self.console.print(f"✅ تعداد تعامل از {old_count} به {count} تغییر یافت", style="green")
+                else:
+                    self.console.print("❌ تعداد تعامل نمی‌تواند منفی باشد", style="red")
+            
+            elif param == 'interests':
+                interests = [i.strip() for i in value.split(',') if i.strip()]
+                old_interests = self.user_profile.profile['interests']
+                self.user_profile.profile['interests'] = interests
+                self.user_profile.save_profile()
+                self.console.print(f"✅ علایق تغییر یافت: {', '.join(interests)}", style="green")
+            
+            elif param == 'traits':
+                traits = [t.strip() for t in value.split(',') if t.strip()]
+                old_traits = self.user_profile.profile['personality_traits']
+                self.user_profile.profile['personality_traits'] = traits
+                self.user_profile.save_profile()
+                self.console.print(f"✅ ویژگی‌های شخصیتی تغییر یافت: {', '.join(traits)}", style="green")
+            
+            elif param == 'style':
+                valid_styles = ['friendly', 'formal', 'casual', 'professional']
+                if value.lower() in valid_styles:
+                    old_style = self.user_profile.profile.get('communication_style', 'friendly')
+                    self.user_profile.profile['communication_style'] = value.lower()
+                    self.user_profile.save_profile()
+                    self.console.print(f"✅ سبک ارتباط از '{old_style}' به '{value}' تغییر یافت", style="green")
+                else:
+                    self.console.print(f"❌ سبک معتبر: {', '.join(valid_styles)}", style="red")
+            
+            else:
+                self.console.print(f"❌ پارامتر نامعتبر: {param}", style="red")
+                self.console.print("پارامترهای معتبر: name, relationship, interactions, interests, traits, style", style="yellow")
+        
+        except ValueError:
+            self.console.print("❌ مقدار نامعتبر. لطفاً عدد صحیح وارد کنید.", style="red")
+        except Exception as e:
+            self.console.print(f"❌ خطا: {e}", style="red")
     
     def start_voice_conversation(self):
         """Start voice conversation mode"""
