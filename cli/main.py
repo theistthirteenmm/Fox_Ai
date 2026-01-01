@@ -257,9 +257,6 @@ class PersonalAI:
                 result = handle_api_command(user_input.split())
                 console.print(result, style="cyan")
                 return True
-                else:
-                    console.print("استفاده: /switch <نام کاربر>", style="yellow")
-                return True
             
             elif command == 'status':
                 self.show_status()

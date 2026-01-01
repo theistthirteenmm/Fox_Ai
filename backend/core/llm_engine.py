@@ -70,7 +70,7 @@ class LLMEngine:
             user_name = "دوست"
             relationship = "دوست"
             try:
-                from backend.core.multi_user import MultiUserManager
+                from backend.core.user_profiles import user_manager
                 from backend.database.models import get_db
                 db = next(get_db())
                 multi_user = MultiUserManager(db)
@@ -161,7 +161,7 @@ class LLMEngine:
             user_name = "دوست"
             relationship = "دوست"
             try:
-                from backend.core.multi_user import MultiUserManager
+                from backend.core.user_profiles import user_manager
                 from backend.database.models import get_db
                 db = next(get_db())
                 multi_user = MultiUserManager(db)

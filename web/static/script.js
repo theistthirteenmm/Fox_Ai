@@ -13,6 +13,7 @@ class ChatApp {
         this.recognition = null;
         this.ttsEnabled = true; // TTS enabled by default
         this.selectedVoiceIndex = -1; // For voice selection
+        this.sessionId = this.generateSessionId(); // Generate unique session ID
         
         this.init();
     }
@@ -21,6 +22,7 @@ class ChatApp {
         this.setupEventListeners();
         this.setupVoiceRecognition();
         this.setupScrollObserver(); // Add scroll observer
+        this.loadChatHistory(); // Load previous messages
         this.connect();
         this.setWelcomeTime();
     }
@@ -319,6 +321,11 @@ class ChatApp {
     }
     
     addMessage(content, sender) {
+        this.addMessageToDOM(content, sender);
+        this.saveChatHistory(); // Save after each message
+    }
+    
+    addMessageToDOM(content, sender, time = null) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${sender}`;
         
@@ -328,7 +335,7 @@ class ChatApp {
         
         const timeDiv = document.createElement('div');
         timeDiv.className = 'message-time';
-        timeDiv.textContent = this.getCurrentTime();
+        timeDiv.textContent = time || this.getCurrentTime();
         
         messageDiv.appendChild(contentDiv);
         messageDiv.appendChild(timeDiv);
@@ -486,9 +493,213 @@ class ChatApp {
             welcomeTime.textContent = this.getCurrentTime();
         }
     }
+    
+    generateSessionId() {
+        return 'fox_session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+    
+    saveChatHistory() {
+        const messages = Array.from(this.messages.children).map(msg => {
+            const isUser = msg.classList.contains('user');
+            const content = msg.querySelector('.message-content').textContent;
+            const time = msg.querySelector('.message-time').textContent;
+            return {
+                content,
+                sender: isUser ? 'user' : 'assistant',
+                time,
+                timestamp: Date.now()
+            };
+        });
+        
+        localStorage.setItem(`fox_chat_${this.sessionId}`, JSON.stringify(messages));
+        
+        // Also save session list
+        const sessions = JSON.parse(localStorage.getItem('fox_sessions') || '[]');
+        const existingIndex = sessions.findIndex(s => s.id === this.sessionId);
+        
+        const sessionData = {
+            id: this.sessionId,
+            title: this.generateSessionTitle(messages),
+            lastMessage: messages.length > 0 ? messages[messages.length - 1].content.substring(0, 50) + '...' : 'جلسه جدید',
+            timestamp: Date.now(),
+            messageCount: messages.length
+        };
+        
+        if (existingIndex >= 0) {
+            sessions[existingIndex] = sessionData;
+        } else {
+            sessions.unshift(sessionData);
+        }
+        
+        // Keep only last 20 sessions
+        if (sessions.length > 20) {
+            sessions.splice(20);
+        }
+        
+        localStorage.setItem('fox_sessions', JSON.stringify(sessions));
+    }
+    
+    loadChatHistory() {
+        // Check if there's a session ID in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionFromUrl = urlParams.get('session');
+        
+        if (sessionFromUrl) {
+            this.sessionId = sessionFromUrl;
+        }
+        
+        const savedMessages = localStorage.getItem(`fox_chat_${this.sessionId}`);
+        if (savedMessages) {
+            const messages = JSON.parse(savedMessages);
+            messages.forEach(msg => {
+                this.addMessageToDOM(msg.content, msg.sender, msg.time);
+            });
+        }
+        
+        this.createSessionManager();
+    }
+    
+    generateSessionTitle(messages) {
+        if (messages.length === 0) return 'جلسه جدید';
+        
+        const firstUserMessage = messages.find(m => m.sender === 'user');
+        if (firstUserMessage) {
+            return firstUserMessage.content.substring(0, 30) + (firstUserMessage.content.length > 30 ? '...' : '');
+        }
+        
+        return 'جلسه ' + new Date().toLocaleDateString('fa-IR');
+    }
+    
+    createSessionManager() {
+        // Add session manager button if not exists
+        if (!document.getElementById('sessionManager')) {
+            const sessionBtn = document.createElement('button');
+            sessionBtn.id = 'sessionManager';
+            sessionBtn.className = 'session-btn';
+            sessionBtn.innerHTML = '📋 جلسات';
+            sessionBtn.title = 'مدیریت جلسات گفتگو';
+            
+            sessionBtn.addEventListener('click', () => this.showSessionList());
+            
+            // Add to header
+            const header = document.querySelector('.chat-header');
+            if (header) {
+                header.appendChild(sessionBtn);
+            }
+        }
+    }
+    
+    showSessionList() {
+        const sessions = JSON.parse(localStorage.getItem('fox_sessions') || '[]');
+        
+        // Create modal
+        const modal = document.createElement('div');
+        modal.className = 'session-modal';
+        modal.innerHTML = `
+            <div class="session-modal-content">
+                <div class="session-modal-header">
+                    <h3>📋 جلسات گفتگو</h3>
+                    <button class="close-btn" onclick="this.parentElement.parentElement.parentElement.remove()">×</button>
+                </div>
+                <div class="session-list">
+                    <div class="session-item new-session" onclick="window.chatApp.newSession()">
+                        <div class="session-icon">➕</div>
+                        <div class="session-info">
+                            <div class="session-title">جلسه جدید</div>
+                            <div class="session-preview">شروع گفتگوی جدید</div>
+                        </div>
+                    </div>
+                    ${sessions.map(session => `
+                        <div class="session-item ${session.id === this.sessionId ? 'active' : ''}" 
+                             onclick="window.chatApp.loadSession('${session.id}')">
+                            <div class="session-icon">💬</div>
+                            <div class="session-info">
+                                <div class="session-title">${session.title}</div>
+                                <div class="session-preview">${session.lastMessage}</div>
+                                <div class="session-meta">${session.messageCount} پیام • ${new Date(session.timestamp).toLocaleDateString('fa-IR')}</div>
+                            </div>
+                            <button class="delete-session" onclick="event.stopPropagation(); window.chatApp.deleteSession('${session.id}')" title="حذف جلسه">🗑️</button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Close on background click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+    
+    newSession() {
+        this.sessionId = this.generateSessionId();
+        this.messages.innerHTML = '';
+        
+        // Update URL
+        const url = new URL(window.location);
+        url.searchParams.set('session', this.sessionId);
+        window.history.pushState({}, '', url);
+        
+        // Close modal
+        document.querySelector('.session-modal')?.remove();
+        
+        // Add welcome message
+        this.addWelcomeMessage();
+    }
+    
+    loadSession(sessionId) {
+        this.sessionId = sessionId;
+        this.messages.innerHTML = '';
+        
+        // Update URL
+        const url = new URL(window.location);
+        url.searchParams.set('session', sessionId);
+        window.history.pushState({}, '', url);
+        
+        // Load messages
+        const savedMessages = localStorage.getItem(`fox_chat_${sessionId}`);
+        if (savedMessages) {
+            const messages = JSON.parse(savedMessages);
+            messages.forEach(msg => {
+                this.addMessageToDOM(msg.content, msg.sender, msg.time);
+            });
+        }
+        
+        // Close modal
+        document.querySelector('.session-modal')?.remove();
+    }
+    
+    deleteSession(sessionId) {
+        if (confirm('آیا مطمئن هستید که می‌خواهید این جلسه را حذف کنید؟')) {
+            // Remove from localStorage
+            localStorage.removeItem(`fox_chat_${sessionId}`);
+            
+            // Remove from sessions list
+            const sessions = JSON.parse(localStorage.getItem('fox_sessions') || '[]');
+            const filteredSessions = sessions.filter(s => s.id !== sessionId);
+            localStorage.setItem('fox_sessions', JSON.stringify(filteredSessions));
+            
+            // If current session is deleted, create new one
+            if (sessionId === this.sessionId) {
+                this.newSession();
+            }
+            
+            // Refresh session list
+            document.querySelector('.session-modal')?.remove();
+            this.showSessionList();
+        }
+    }
+    
+    addWelcomeMessage() {
+        this.addMessageToDOM('سلام! من Fox هستم 🦊\nچطور می‌تونم کمکتون کنم؟', 'assistant');
+    }
 }
 
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new ChatApp();
+    window.chatApp = new ChatApp(); // Make it globally accessible
 });

@@ -4,7 +4,7 @@
   "description": "Fox AI Assistant Desktop App",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "electron . --no-sandbox",
     "build": "electron-builder",
     "dist": "electron-builder --publish=never"
   },
