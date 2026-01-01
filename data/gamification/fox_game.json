@@ -1,0 +1,19 @@
+{
+  "fox_level": 1,
+  "experience": 70,
+  "achievements": [
+    {
+      "id": "first_chat",
+      "name": "اولین مکالمه",
+      "earned_date": "2026-01-01T20:23:02.536472"
+    }
+  ],
+  "stats": {
+    "conversations": 4,
+    "questions_answered": 0,
+    "things_learned": 0,
+    "days_active": 0,
+    "friendship_points": 0
+  },
+  "last_updated": "2026-01-01T20:31:26.334083"
+}
