@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  fox-ai:
+    build: .
+    container_name: fox-ai
+    ports:
+      - "7070:7070"    # Web interface
+      - "11434:11434"  # Ollama API
+    volumes:
+      - fox_data:/app/data
+      - fox_models:/root/.ollama
+    environment:
+      - WEB_PORT=7070
+      - WEB_HOST=0.0.0.0
+      - OLLAMA_HOST=http://localhost:11434
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7070"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Optional: Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: fox-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - fox-ai
+    restart: unless-stopped
+    profiles:
+      - production
+
+volumes:
+  fox_data:
+    driver: local
+  fox_models:
+    driver: local
+
+networks:
+  default:
+    name: fox-network

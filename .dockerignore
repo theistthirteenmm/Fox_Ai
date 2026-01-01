@@ -1,0 +1,51 @@
+# Docker ignore patterns
+.git
+.gitignore
+*.md
+!README.md
+!DOCKER.md
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache
+venv/
+.venv/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Logs
+*.log
+web.log
+data/logs/*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp
+
+# Large files that will be downloaded
+data/models/*
+!data/models/.gitkeep
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
