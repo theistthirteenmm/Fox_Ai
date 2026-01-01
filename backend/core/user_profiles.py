@@ -75,21 +75,50 @@ class UserProfileManager:
                 
     def detect_new_user(self, message: str) -> Optional[str]:
         """Detect if someone is introducing themselves"""
-        intro_patterns = [
-            "من", "اسم من", "نام من", "منم", "هستم",
-            "معرفی", "آشنایی", "خودم", "صدام کن"
-        ]
+        message_lower = message.lower().strip()
         
-        # Simple detection - can be improved
-        message_lower = message.lower()
-        if any(pattern in message_lower for pattern in intro_patterns):
-            # Extract potential name (very basic)
-            words = message.split()
-            for i, word in enumerate(words):
-                if word in ["من", "منم", "اسم", "نام"] and i + 1 < len(words):
-                    potential_name = words[i + 1].strip("،.!؟")
-                    if len(potential_name) > 1 and potential_name != "حامد":
-                        return potential_name
+        # الگوهای دقیق معرفی
+        if "اسم من" in message_lower:
+            # "اسم من علی هست" -> علی
+            parts = message_lower.split("اسم من")
+            if len(parts) > 1:
+                name_part = parts[1].strip()
+                words = name_part.split()
+                if words and words[0] not in ["هست", "است", "میشه", "کی", "چی"]:
+                    return words[0].strip("،.!؟")
+                    
+        elif "نام من" in message_lower:
+            # "نام من سارا است" -> سارا  
+            parts = message_lower.split("نام من")
+            if len(parts) > 1:
+                name_part = parts[1].strip()
+                words = name_part.split()
+                if words and words[0] not in ["هست", "است", "میشه", "کی", "چی"]:
+                    return words[0].strip("،.!؟")
+                    
+        elif "هستم" in message_lower and "من" in message_lower:
+            # "من رضا هستم" -> رضا
+            # پیدا کردن کلمه بین "من" و "هستم"
+            words = message_lower.split()
+            try:
+                man_index = words.index("من")
+                hastam_index = words.index("هستم")
+                if hastam_index > man_index + 1:
+                    # کلمه بین "من" و "هستم"
+                    name = words[man_index + 1]
+                    if name not in ["یه", "یک", "کی", "چی", "خیلی"]:
+                        return name.strip("،.!؟")
+            except ValueError:
+                pass
+                    
+        elif "صدام کن" in message_lower:
+            # "صدام کن مهدی" -> مهدی
+            parts = message_lower.split("صدام کن")
+            if len(parts) > 1:
+                name_part = parts[1].strip()
+                if name_part and name_part not in ["من", "منو"]:
+                    return name_part.strip("،.!؟")
+        
         return None
         
     def switch_user(self, username: str):
