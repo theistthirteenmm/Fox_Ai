@@ -12,6 +12,7 @@ class ChatApp {
         this.isRecording = false;
         this.recognition = null;
         this.ttsEnabled = true; // TTS enabled by default
+        this.selectedVoiceIndex = -1; // For voice selection
         
         this.init();
     }
@@ -73,6 +74,9 @@ class ChatApp {
                 <div class="command-item" data-cmd="/web ">🌐 /web - جستجو در اینترنت</div>
                 <div class="command-item" data-cmd="/news ">📰 /news - دریافت اخبار</div>
                 <div class="command-item" data-cmd="/weather ">🌤️ /weather - آب و هوا</div>
+                <div class="command-item" data-cmd="/speak ">🔊 /speak - گفتن متن</div>
+                <div class="command-item" data-cmd="/voices">🎵 /voices - صداهای موجود</div>
+                <div class="command-item" data-cmd="/voice_test">🔊 /voice_test - تست صدا</div>
             `;
             
             menu.addEventListener('click', (e) => {
@@ -83,7 +87,9 @@ class ChatApp {
                     
                     // Auto-send simple commands, focus for complex ones
                     if (cmd === '/help' || cmd === '/learned' || cmd === '/mood' || cmd === '/models' || 
-                        cmd === '/history' || cmd === '/memory' || cmd === '/status' || cmd === '/experience') {
+                        cmd === '/history' || cmd === '/memory' || cmd === '/status' || cmd === '/experience' ||
+                        cmd === '/voices' || cmd === '/voice_test' || cmd === '/listen' || cmd === '/voice' ||
+                        cmd === '/tts_on' || cmd === '/tts_off') {
                         this.sendMessage();
                     } else {
                         this.messageInput.focus();
@@ -279,6 +285,16 @@ class ChatApp {
                 break;
             case 'message':
                 this.hideTyping();
+                
+                // Check for voice commands
+                if (data.message.includes('/set_voice')) {
+                    const match = data.message.match(/\/set_voice (\d+)/);
+                    if (match) {
+                        this.selectedVoiceIndex = parseInt(match[1]);
+                        console.log('Voice index set to:', this.selectedVoiceIndex);
+                    }
+                }
+                
                 this.addMessage(data.message, 'assistant');
                 // Add text-to-speech for Fox responses
                 this.speakText(data.message);
@@ -391,23 +407,58 @@ class ChatApp {
             
             const utterance = new SpeechSynthesisUtterance(text);
             
-            // Try to find Persian voice, fallback to default
-            const voices = speechSynthesis.getVoices();
-            const persianVoice = voices.find(voice => 
-                voice.lang.includes('fa') || 
-                voice.lang.includes('persian') ||
-                voice.name.toLowerCase().includes('persian')
-            );
+            // Wait for voices to load
+            const setVoice = () => {
+                const voices = speechSynthesis.getVoices();
+                console.log('Available voices:', voices.map(v => `${v.name} (${v.lang})`));
+                
+                // Try to find Persian/Farsi voice with better matching
+                const persianVoice = voices.find(voice => 
+                    voice.lang.startsWith('fa') || 
+                    voice.lang.includes('fa-') ||
+                    voice.lang.includes('persian') ||
+                    voice.name.toLowerCase().includes('persian') ||
+                    voice.name.toLowerCase().includes('farsi') ||
+                    voice.name.toLowerCase().includes('زهرا') ||
+                    voice.name.toLowerCase().includes('مریم')
+                );
+                
+                if (persianVoice) {
+                    utterance.voice = persianVoice;
+                    console.log('Using Persian voice:', persianVoice.name);
+                } else if (this.selectedVoiceIndex >= 0 && voices[this.selectedVoiceIndex]) {
+                    // Use user-selected voice
+                    utterance.voice = voices[this.selectedVoiceIndex];
+                    console.log('Using selected voice:', voices[this.selectedVoiceIndex].name);
+                } else {
+                    // Fallback: try Arabic or similar
+                    const arabicVoice = voices.find(voice => 
+                        voice.lang.startsWith('ar') ||
+                        voice.name.toLowerCase().includes('arabic')
+                    );
+                    if (arabicVoice) {
+                        utterance.voice = arabicVoice;
+                        console.log('Using Arabic voice as fallback:', arabicVoice.name);
+                    } else {
+                        console.log('No Persian/Arabic voice found, using default');
+                    }
+                }
+                
+                utterance.rate = 0.8;  // Slower for Persian
+                utterance.pitch = 1.0;
+                utterance.volume = 0.9;
+                utterance.lang = 'fa-IR';  // Set Persian language
+                
+                speechSynthesis.speak(utterance);
+            };
             
-            if (persianVoice) {
-                utterance.voice = persianVoice;
+            // Check if voices are already loaded
+            if (speechSynthesis.getVoices().length > 0) {
+                setVoice();
+            } else {
+                // Wait for voices to load
+                speechSynthesis.onvoiceschanged = setVoice;
             }
-            
-            utterance.rate = 0.9;
-            utterance.pitch = 1.0;
-            utterance.volume = 0.8;
-            
-            speechSynthesis.speak(utterance);
         }
     }
     
