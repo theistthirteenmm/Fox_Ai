@@ -11,6 +11,7 @@ from backend.database.models import Conversation, Message, Memory, get_db, creat
 class MemoryManager:
     def __init__(self):
         create_tables()
+        self.db = next(get_db())  # Keep database session
     
     def create_session(self) -> str:
         """Create new conversation session"""

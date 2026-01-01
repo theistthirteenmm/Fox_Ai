@@ -12,18 +12,21 @@ from rich.prompt import Prompt
 from rich.panel import Panel
 from rich.markdown import Markdown
 from rich.table import Table
-from backend.core.llm_engine import LLMEngine
+from backend.core.llm_engine import LLMEngine, ChatMessage
 from backend.core.conversation import ConversationManager
 from backend.core.internet import InternetAccess
 from backend.core.ai_connector import AIConnector
 from backend.core.voice import VoiceManager
 from backend.core.personality import PersonalitySystem
+from backend.core.user_profile import UserProfile, FoxPersonality
+from backend.core.introduction import FoxIntroduction
 from backend.config.settings import settings
 
 console = Console()
 
 class PersonalAI:
     def __init__(self):
+        self.console = Console()
         self.llm = LLMEngine(
             model_name=settings.default_model,
             host=settings.ollama_host
@@ -34,7 +37,16 @@ class PersonalAI:
         self.voice = VoiceManager()
         self.personality = PersonalitySystem()
         
-    def display_welcome(self):
+        # Initialize user profile and personality
+        self.user_profile = UserProfile(self.conversation.memory.db)
+        self.fox_personality = FoxPersonality(self.user_profile)
+        self.introduction = None
+        
+        # Check if first time user
+        if self.user_profile.is_first_time():
+            self.introduction = FoxIntroduction(self.user_profile)
+        
+    def display_welcome(self):        
         voice_status = self.voice.is_available()
         voice_info = ""
         if voice_status['speech_to_text'] and voice_status['text_to_speech']:
@@ -44,10 +56,16 @@ class PersonalAI:
         elif voice_status['text_to_speech']:
             voice_info = "\n🔊 تولید گفتار فعال است"
         
+        # Show introduction for first-time users
+        if self.introduction:
+            intro_message = self.introduction.start_introduction()
+            self.console.print(Panel(intro_message, title="🦊 Fox - آشنایی", border_style="cyan"))
+            return
+        
         welcome_text = f"""
 # 🦊 Fox - دستیار هوش مصنوعی شخصی
 
-سلام! من Fox هستم، دستیار هوش مصنوعی شخصی شما.{voice_info}
+{self.fox_personality.get_greeting_style()}{voice_info}
 
 **دستورات موجود:**
 - `/help` - نمایش راهنما
@@ -212,6 +230,19 @@ class PersonalAI:
         console.print("💡 برای خروج 'خروج' یا Ctrl+C", style="dim")
         
         def chat_callback(text):
+            # Handle introduction process
+            if self.introduction and not self.introduction.is_introduction_complete():
+                response = self.introduction.process_response(text)
+                if self.introduction.is_introduction_complete():
+                    self.introduction = None
+                    # Update relationship level
+                    self.user_profile.update_relationship_level(1)
+                self.console.print(Panel(response, title="🦊 Fox", border_style="cyan"))
+                return
+            
+            # Record interaction
+            self.user_profile.record_interaction()
+            
             # Add user message
             self.conversation.add_message("user", text)
             
@@ -224,9 +255,29 @@ class PersonalAI:
                         web_context += f"- {result['title']}: {result['content'][:200]}...\n"
                     self.conversation.add_message("system", web_context)
             
-            # Get AI response
+            # Get AI response with personality
             context_messages = self.conversation.get_enhanced_context()
+            
+            # Add personality context
+            personality_context = f"""
+شما Fox هستید، دستیار هوشمند که با {self.user_profile.get_name()} دوست هستید.
+سطح رابطه: {self.user_profile.get_relationship_status()}
+علایق کاربر: {', '.join(self.user_profile.profile['interests'])}
+ویژگی‌های شخصیتی کاربر: {', '.join(self.user_profile.profile['personality_traits'])}
+
+سبک پاسخ: {self.fox_personality.get_response_style()}
+"""
+            
+            context_messages.append({"role": "system", "content": personality_context})
+            
             response = self.llm.chat(context_messages)
+            
+            # Add proactive question if appropriate
+            if self.fox_personality.should_ask_question() and len(response) < 200:
+                import random
+                if random.random() < 0.3:  # 30% chance
+                    question = self.fox_personality.get_random_question()
+                    response += f"\n\n{question}"
             
             # Add AI response
             self.conversation.add_message("assistant", response)
