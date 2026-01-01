@@ -86,7 +86,35 @@ async def handle_web_command(command: str, websocket: WebSocket) -> str:
         except:
             return "😊 وضعیت احساسی Fox: خوشحال"
     
-    elif cmd == 'web':
+    elif cmd == 'recall' or cmd == 'remember':
+        if len(parts) > 1:
+            search_term = ' '.join(parts[1:])
+            try:
+                from backend.database.models import get_db, Message
+                from sqlalchemy import desc, or_
+                
+                db = next(get_db())
+                # Search in recent messages (last 100)
+                messages = db.query(Message).filter(
+                    or_(
+                        Message.content.contains(search_term),
+                        Message.content.like(f'%{search_term}%')
+                    )
+                ).order_by(desc(Message.timestamp)).limit(10).all()
+                
+                if messages:
+                    result = f"🧠 یادم هست! در مورد '{search_term}' صحبت کردیم:\n\n"
+                    for msg in reversed(messages[-3:]):  # Show last 3 matches
+                        time_str = msg.timestamp.strftime("%Y/%m/%d %H:%M")
+                        role = "شما" if msg.role == "user" else "Fox"
+                        content = msg.content[:100] + "..." if len(msg.content) > 100 else msg.content
+                        result += f"📅 {time_str} - {role}: {content}\n"
+                    return result
+                else:
+                    return f"🤔 متأسفانه چیزی در مورد '{search_term}' یادم نیست"
+            except Exception as e:
+                return f"❌ خطا در جستجو: {str(e)}"
+        return "استفاده: /recall <موضوع یا کلمه کلیدی>"
         if len(parts) > 1:
             query = ' '.join(parts[1:])
             try:

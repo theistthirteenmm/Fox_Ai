@@ -123,6 +123,7 @@ class PersonalAI:
 - `/teach <کلید> <پاسخ>` - آموزش پاسخ خاص
 - `/learn <موضوع> <حقیقت>` - آموزش دانش جدید
 - `/learned` - نمایش آمار یادگیری
+- `/recall <موضوع>` - یادآوری مکالمات قبلی
 - `/new` - شروع مکالمه جدید
 - `/clear` - پاک کردن مکالمه فعلی
 - `/quit` - خروج
@@ -333,6 +334,37 @@ class PersonalAI:
                 console.print(f"• اطلاعات فرهنگی: {stats['cultural_knowledge']}")
                 console.print(f"• ترجیحات شخصی: {stats['personal_preferences']}")
                 console.print(f"• کارهای روزمره: {stats['daily_routines']}")
+                return True
+            
+            elif command == 'recall' or command == 'remember':
+                if len(parts) > 1:
+                    search_term = ' '.join(parts[1:])
+                    try:
+                        from backend.database.models import get_db, Message
+                        from sqlalchemy import desc, or_
+                        
+                        db = next(get_db())
+                        messages = db.query(Message).filter(
+                            or_(
+                                Message.content.contains(search_term),
+                                Message.content.like(f'%{search_term}%')
+                            )
+                        ).order_by(desc(Message.timestamp)).limit(10).all()
+                        
+                        if messages:
+                            console.print(f"\n🧠 یادم هست! در مورد '{search_term}' صحبت کردیم:", style="bold green")
+                            for msg in reversed(messages[-3:]):
+                                time_str = msg.timestamp.strftime("%Y/%m/%d %H:%M")
+                                role = "شما" if msg.role == "user" else "Fox"
+                                content = msg.content[:80] + "..." if len(msg.content) > 80 else msg.content
+                                console.print(f"📅 {time_str} - {role}: {content}", style="dim")
+                        else:
+                            console.print(f"🤔 متأسفانه چیزی در مورد '{search_term}' یادم نیست", style="yellow")
+                    except Exception as e:
+                        console.print(f"❌ خطا در جستجو: {str(e)}", style="red")
+                else:
+                    console.print("استفاده: /recall <موضوع یا کلمه کلیدی>", style="yellow")
+                    console.print("مثال: /recall برنامه‌نویسی", style="dim")
                 return True
             
             elif command == 'new':

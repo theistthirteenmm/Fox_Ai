@@ -59,6 +59,7 @@ class ChatApp {
             menu.className = 'command-menu';
             menu.innerHTML = `
                 <div class="command-item" data-cmd="/help">📚 /help - نمایش راهنما</div>
+                <div class="command-item" data-cmd="/recall ">🧠 /recall - یادآوری مکالمات قبلی</div>
                 <div class="command-item" data-cmd="/teach ">🎓 /teach - آموزش پاسخ خاص</div>
                 <div class="command-item" data-cmd="/learn ">📖 /learn - آموزش دانش جدید</div>
                 <div class="command-item" data-cmd="/learned">📊 /learned - آمار یادگیری</div>
