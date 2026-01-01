@@ -35,7 +35,9 @@ ai_connector = AIConnector()
 personality = PersonalitySystem()
 
 # Initialize user profile and learning system
-user_profile = UserProfile()
+from backend.database.models import get_db
+db_session = next(get_db())
+user_profile = UserProfile(db_session)
 fox_learning = FoxLearningSystem(user_profile)
 
 async def handle_web_command(command: str, websocket: WebSocket) -> str:
@@ -130,14 +132,14 @@ async def websocket_endpoint(websocket: WebSocket):
             
             try:
                 # Check for commands
-            if user_message.startswith('/'):
-                command_response = await handle_web_command(user_message, websocket)
-                if command_response:
-                    await websocket.send_text(json.dumps({
-                        "type": "message",
-                        "message": command_response
-                    }))
-                    continue
+                if user_message.startswith('/'):
+                    command_response = await handle_web_command(user_message, websocket)
+                    if command_response:
+                        await websocket.send_text(json.dumps({
+                            "type": "message",
+                            "message": command_response
+                        }))
+                        continue
             
             # Check if user is asking for web search
                 if any(keyword in user_message.lower() for keyword in ['جستجو کن', 'search', 'اینترنت', 'آخرین اخبار', 'خبر', 'وضعیت آب و هوا']):
