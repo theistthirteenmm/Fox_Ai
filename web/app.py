@@ -21,6 +21,9 @@ from backend.commands.api_commands import handle_api_command
 from backend.core.user_profiles import user_manager
 from backend.core.multi_ai_system import multi_ai_system
 from backend.core.fox_scraper import fox_scraper
+from backend.core.smart_memory import smart_memory
+from backend.core.smart_notifications import smart_notifications
+from backend.core.analytics_dashboard import analytics_dashboard
 
 app = FastAPI(title="Fox - Personal AI Assistant")
 
@@ -493,7 +496,87 @@ speechSynthesis.getVoices().forEach((voice, i) => {
         result = multi_ai_system.disable()
         return result
         
-    elif cmd == 'multi_ai_status':
+    elif cmd == 'stats':
+        # آمار شخصی کاربر
+        stats = analytics_dashboard.get_dashboard_data("today")
+        insights = smart_memory.get_user_insights()
+        
+        return f"""📊 **آمار امروز شما:**
+        
+🗣️ **مکالمات:** {stats['conversations']} مکالمه
+⏱️ **زمان پاسخ:** {stats['avg_response_time']} ثانیه
+📚 **موضوعات:** {', '.join(stats['top_topics'].keys()) if stats['top_topics'] else 'هیچ'}
+💬 **کلمات:** {stats['word_stats']['user']} شما، {stats['word_stats']['ai']} من
+
+🧠 **تحلیل رفتار:**
+📈 **کل مکالمات:** {insights.get('total_conversations', 0)}
+🕐 **ساعات فعال:** {', '.join([h[0] for h in insights.get('active_hours', [])[:3]])}
+📅 **آخرین فعالیت:** {insights.get('last_activity', 'نامشخص')}
+"""
+        
+    elif cmd == 'dashboard':
+        # داشبورد کامل
+        week_stats = analytics_dashboard.get_dashboard_data("week")
+        month_stats = analytics_dashboard.get_dashboard_data("month")
+        
+        return f"""📊 **داشبورد تحلیلی Fox**
+
+📅 **هفته گذشته:**
+• {week_stats['conversations']} مکالمه ({week_stats['avg_daily']} روزانه)
+• روند: {week_stats.get('trend', 'نامشخص')}
+• موضوعات: {', '.join(list(week_stats['top_topics'].keys())[:3])}
+
+📆 **ماه گذشته:**  
+• {month_stats['conversations']} مکالمه ({month_stats['avg_weekly']} هفتگی)
+• یادگیری: {month_stats.get('learning_progress', {}).get('total_sessions', 0)} جلسه
+
+🎯 **پیشنهادات:**
+{chr(10).join(['• ' + suggestion for suggestion in smart_memory.suggest_topics()[:3]])}
+"""
+        
+    elif cmd == 'notifications':
+        # اعلان‌های هوشمند
+        pending = smart_notifications.get_pending_notifications()
+        unread = smart_notifications.get_unread_notifications()
+        stats = smart_notifications.get_notification_stats()
+        
+        response = f"""🔔 **اعلان‌های هوشمند**
+
+📊 **آمار:**
+• کل: {stats['total']} | ارسال شده: {stats['sent']} | خوانده شده: {stats['read']}
+• نرخ مطالعه: {stats['read_rate']:.1f}%
+
+"""
+        
+        if pending:
+            response += "⏰ **در انتظار ارسال:**\n"
+            for notif in pending[:3]:
+                response += f"• {notif.title}: {notif.message}\n"
+                
+        if unread:
+            response += "\n📬 **خوانده نشده:**\n"
+            for notif in unread[:3]:
+                response += f"• {notif.title}: {notif.message}\n"
+                
+        return response
+        
+    elif cmd == 'context':
+        # مکالمات مرتبط
+        if len(parts) > 1:
+            query = ' '.join(parts[1:])
+            relevant = smart_memory.get_relevant_context(query)
+            
+            if relevant:
+                response = f"🔍 **مکالمات مرتبط با '{query}':**\n\n"
+                for i, conv in enumerate(relevant[:3], 1):
+                    date = datetime.fromisoformat(conv['timestamp']).strftime('%Y/%m/%d %H:%M')
+                    response += f"{i}. **{date}** - {conv['topic']}\n"
+                    response += f"   سوال: {conv['user_input'][:100]}...\n\n"
+                return response
+            else:
+                return "🤔 مکالمه مرتبطی پیدا نکردم"
+        else:
+            return "❓ لطفاً موضوع مورد نظر را بنویسید: `/context موضوع`"
         result = multi_ai_system.get_status()
         return result
     
@@ -663,6 +746,10 @@ async def websocket_endpoint(websocket: WebSocket):
             # Update conversation stats for current user
             user_manager.update_conversation_stats(user_manager.current_user, user_message)
             
+            # شروع زمان‌سنجی پاسخ
+            import time
+            start_time = time.time()
+            
             # Add user message to conversation
             conversation_manager.add_message("user", user_message)
             
@@ -770,6 +857,31 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 # Apply personality styling
                 styled_response = personality.generate_response_style(response)
+                
+                # ثبت مکالمه در سیستم‌های هوشمند
+                try:
+                    import time
+                    response_time = time.time() - start_time
+                    
+                    # تشخیص موضوع
+                    topic = smart_memory.detect_topic(message)
+                    
+                    # ثبت در حافظه هوشمند
+                    smart_memory.add_conversation(message, styled_response, {"topic": topic})
+                    
+                    # ثبت در آنالیتیکس
+                    analytics_dashboard.record_conversation(message, styled_response, response_time, topic)
+                    
+                    # ایجاد follow-up notification
+                    if len(message.split()) > 10:  # سوالات طولانی
+                        smart_notifications.create_follow_up(message)
+                        
+                    # پیشنهاد یادگیری
+                    if any(word in message.lower() for word in ['یاد', 'آموزش', 'چطور', 'نحوه']):
+                        smart_notifications.create_learning_reminder(topic)
+                        
+                except Exception as e:
+                    print(f"خطا در ثبت مکالمه: {e}")
                 
                 # Add AI response to conversation
                 conversation_manager.add_message("assistant", styled_response)
