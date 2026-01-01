@@ -22,6 +22,7 @@ from backend.core.user_profile import UserProfile, FoxPersonality
 from backend.core.introduction import FoxIntroduction
 from backend.core.multi_user import MultiUserManager
 from backend.core.fox_experience import FoxExperienceSystem
+from backend.core.fox_learning import FoxLearningSystem
 from backend.config.settings import settings
 
 console = Console()
@@ -50,11 +51,13 @@ class PersonalAI:
         if self.user_profile:
             self.fox_personality = FoxPersonality(self.user_profile)
             self.fox_experience = FoxExperienceSystem(self.user_profile)
+            self.fox_learning = FoxLearningSystem(self.user_profile)
             if self.user_profile.is_first_time():
                 self.introduction = FoxIntroduction(self.user_profile)
         else:
             # No users yet, will be handled in first interaction
             self.fox_experience = None
+            self.fox_learning = None
             pass
         
     def display_welcome(self):        
@@ -117,6 +120,9 @@ class PersonalAI:
 - `/boost <ماه>` - تقویت هوش Fox
 - `/age <روز>` - پیر کردن Fox
 - `/pretrain` - پیش‌آموزش Fox با دیتاست
+- `/teach <کلید> <پاسخ>` - آموزش پاسخ خاص
+- `/learn <موضوع> <حقیقت>` - آموزش دانش جدید
+- `/learned` - نمایش آمار یادگیری
 - `/new` - شروع مکالمه جدید
 - `/clear` - پاک کردن مکالمه فعلی
 - `/quit` - خروج
@@ -285,6 +291,48 @@ class PersonalAI:
             
             elif command == 'pretrain':
                 self.pretrain_fox()
+                return True
+            
+            elif command == 'teach':
+                if len(parts) >= 2:
+                    # Split on first space after command
+                    rest = user_input[6:].strip()  # Remove "/teach"
+                    if ' ' in rest:
+                        trigger, response = rest.split(' ', 1)
+                        result = self.fox_learning.teach_response(trigger, response)
+                        console.print(result, style="green")
+                    else:
+                        console.print("استفاده: /teach <کلمه کلیدی> <پاسخ>", style="yellow")
+                        console.print("مثال: /teach سلام سلام عزیز! چطوری؟", style="dim")
+                else:
+                    console.print("استفاده: /teach <کلمه کلیدی> <پاسخ>", style="yellow")
+                    console.print("مثال: /teach سلام سلام عزیز! چطوری؟", style="dim")
+                return True
+            
+            elif command == 'learn':
+                if len(parts) >= 2:
+                    # Split on first space after command
+                    rest = user_input[6:].strip()  # Remove "/learn"
+                    if ' ' in rest:
+                        topic, fact = rest.split(' ', 1)
+                        result = self.fox_learning.teach_fact(topic, fact)
+                        console.print(result, style="green")
+                    else:
+                        console.print("استفاده: /learn <موضوع> <حقیقت>", style="yellow")
+                        console.print("مثال: /learn ایران پایتخت ایران تهران است", style="dim")
+                else:
+                    console.print("استفاده: /learn <موضوع> <حقیقت>", style="yellow")
+                    console.print("مثال: /learn ایران پایتخت ایران تهران است", style="dim")
+                return True
+            
+            elif command == 'learned':
+                stats = self.fox_learning.get_learning_stats()
+                console.print("\n📚 آمار یادگیری Fox:", style="bold cyan")
+                console.print(f"• پاسخهای آموزش داده شده: {stats['custom_responses']}")
+                console.print(f"• حقایق یادگیری شده: {stats['learned_facts']}")
+                console.print(f"• اطلاعات فرهنگی: {stats['cultural_knowledge']}")
+                console.print(f"• ترجیحات شخصی: {stats['personal_preferences']}")
+                console.print(f"• کارهای روزمره: {stats['daily_routines']}")
                 return True
             
             elif command == 'new':
@@ -753,7 +801,7 @@ class PersonalAI:
             
             context_messages.append({"role": "system", "content": personality_context})
             
-            response = self.llm.chat(context_messages)
+            response = self.llm.chat(context_messages, fox_learning=self.fox_learning)
             
             # Add proactive question if appropriate
             if self.fox_personality.should_ask_question() and len(response) < 200:
@@ -1140,7 +1188,7 @@ class PersonalAI:
                 console.print("\n[bold green]Fox[/bold green]: ", end="")
                 
                 try:
-                    response = self.llm.chat(context_messages)
+                    response = self.llm.chat(context_messages, fox_learning=self.fox_learning)
                     
                     # Apply personality styling to response
                     styled_response = self.personality.generate_response_style(response)

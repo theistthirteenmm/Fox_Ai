@@ -50,9 +50,21 @@ class LLMEngine:
             logger.error(f"Error downloading model {model_name}: {e}")
             return False
     
-    def chat(self, messages: List[ChatMessage], stream: bool = False) -> str:
+    def chat(self, messages: List[ChatMessage], stream: bool = False, fox_learning=None) -> str:
         """Send chat messages and get response"""
         try:
+            # Check for learned responses first
+            if fox_learning and messages:
+                last_user_message = None
+                for msg in reversed(messages):
+                    if msg.role == 'user':
+                        last_user_message = msg.content
+                        break
+                
+                if last_user_message:
+                    learned_response = fox_learning.get_learned_response(last_user_message)
+                    if learned_response:
+                        return learned_response
             # Add Persian system prompt for better responses
             persian_system_prompt = """شما Fox هستید، یک دستیار هوشمند فارسی‌زبان که:
 - به زبان فارسی روان و طبیعی پاسخ می‌دهید

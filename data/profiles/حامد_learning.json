@@ -1,0 +1,27 @@
+{
+  "custom_responses": {
+    "سلام": {
+      "response": "سلام عزیز! چطوری؟",
+      "taught_at": "2026-01-01T07:38:24.066043",
+      "usage_count": 1
+    },
+    "چطوری": {
+      "response": "عالی هستم! تو چطوری؟",
+      "taught_at": "2026-01-01T07:39:49.636304",
+      "usage_count": 1
+    }
+  },
+  "learned_facts": {
+    "ایران": [
+      {
+        "fact": "پایتخت ایران تهران است",
+        "taught_at": "2026-01-01T07:38:24.069385"
+      }
+    ]
+  },
+  "cultural_knowledge": {},
+  "personal_preferences": {},
+  "daily_routines": {},
+  "teaching_sessions": [],
+  "learned_phrases": []
+}
