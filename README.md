@@ -96,9 +96,12 @@ python cli/main.py
 
 ## 📄 مستندات
 
-- [راهنمای یادگیری](LEARNING_GUIDE.md)
-- [راهنمای چندکاربره](MULTI_USER_GUIDE.md)
-- [راهنمای روابط](RELATIONSHIP_GUIDE.md)
+- **[📚 مستندات کامل](COMPLETE_DOCUMENTATION.md)** - راهنمای جامع تمام قابلیت‌ها
+- [راهنمای یادگیری](LEARNING_GUIDE.md) - نحوه آموزش Fox
+- [راهنمای چندکاربره](MULTI_USER_GUIDE.md) - مدیریت چند کاربر
+- [راهنمای روابط](RELATIONSHIP_GUIDE.md) - سیستم روابط
+- [راهنمای استقرار](DEPLOYMENT.md) - نصب و راه‌اندازی
+- [راهنمای Docker](DOCKER.md) - کانتینرسازی
 
 ---
 
