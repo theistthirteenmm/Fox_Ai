@@ -20,6 +20,7 @@ from backend.core.voice import VoiceManager
 from backend.core.personality import PersonalitySystem
 from backend.core.user_profile import UserProfile, FoxPersonality
 from backend.core.introduction import FoxIntroduction
+from backend.core.multi_user import MultiUserManager
 from backend.config.settings import settings
 
 console = Console()
@@ -37,14 +38,21 @@ class PersonalAI:
         self.voice = VoiceManager()
         self.personality = PersonalitySystem()
         
-        # Initialize user profile and personality
-        self.user_profile = UserProfile(self.conversation.memory.db)
-        self.fox_personality = FoxPersonality(self.user_profile)
+        # Initialize multi-user system
+        self.multi_user = MultiUserManager(self.conversation.memory.db)
+        self.user_profile = self.multi_user.current_user
+        self.fox_personality = None
         self.introduction = None
+        self.pending_user_switch = None
         
-        # Check if first time user
-        if self.user_profile.is_first_time():
-            self.introduction = FoxIntroduction(self.user_profile)
+        # Setup user profile and personality
+        if self.user_profile:
+            self.fox_personality = FoxPersonality(self.user_profile)
+            if self.user_profile.is_first_time():
+                self.introduction = FoxIntroduction(self.user_profile)
+        else:
+            # No users yet, will be handled in first interaction
+            pass
         
     def display_welcome(self):        
         voice_status = self.voice.is_available()
@@ -56,16 +64,30 @@ class PersonalAI:
         elif voice_status['text_to_speech']:
             voice_info = "\n🔊 تولید گفتار فعال است"
         
-        # Show introduction for first-time users
-        if self.introduction:
+        # Show introduction for first-time users or no users
+        if not self.user_profile:
+            # No users yet, start with first user
+            intro_message = "سلام! 🦊✨\n\nمن Fox هستم! اولین باری که باهام صحبت می‌کنی؟\nاسمت چیه تا بتونم بشناسمت؟"
+            self.console.print(Panel(intro_message, title="🦊 Fox - آشنایی", border_style="cyan"))
+            return
+        elif self.introduction:
             intro_message = self.introduction.start_introduction()
             self.console.print(Panel(intro_message, title="🦊 Fox - آشنایی", border_style="cyan"))
             return
+        
+        # Show user info
+        users = self.multi_user.get_all_users()
+        user_info = f"کاربر فعال: {self.user_profile.get_name()}"
+        if len(users) > 1:
+            other_users = [u['name'] for u in users if u['name'] != self.user_profile.get_name()]
+            user_info += f" | سایر کاربران: {', '.join(other_users)}"
         
         welcome_text = f"""
 # 🦊 Fox - دستیار هوش مصنوعی شخصی
 
 {self.fox_personality.get_greeting_style()}{voice_info}
+
+**👤 {user_info}**
 
 **دستورات موجود:**
 - `/help` - نمایش راهنما
@@ -84,7 +106,8 @@ class PersonalAI:
 - `/mood` - نمایش وضعیت احساسی
 - `/feel <احساس> <مقدار>` - تنظیم احساس (0-10)
 - `/happy`, `/sad`, `/excited`, `/serious` - تغییر سریع حالت
-- `/reset_mood` - بازگشت به حالت پایه
+- `/users` - نمایش همه کاربران
+- `/switch <نام>` - تغییر کاربر فعال
 - `/new` - شروع مکالمه جدید
 - `/clear` - پاک کردن مکالمه فعلی
 - `/quit` - خروج
@@ -199,6 +222,18 @@ class PersonalAI:
                 console.print(result, style="green")
                 return True
             
+            elif command == 'users':
+                self.show_users()
+                return True
+            
+            elif command == 'switch':
+                if parts and len(parts) > 1:
+                    user_name = ' '.join(parts[1:])
+                    self.switch_to_user(user_name)
+                else:
+                    console.print("استفاده: /switch <نام کاربر>", style="yellow")
+                return True
+            
             elif command == 'new':
                 session_id = self.conversation.start_new_session()
                 console.print(f"✅ مکالمه جدید شروع شد: {session_id[:8]}...", style="green")
@@ -219,6 +254,52 @@ class PersonalAI:
         
         return False
     
+    def show_users(self):
+        """نمایش همه کاربران"""
+        users = self.multi_user.get_all_users()
+        
+        if not users:
+            self.console.print("هیچ کاربری ثبت نشده است.", style="yellow")
+            return
+        
+        table = Table(title="👥 کاربران Fox")
+        table.add_column("نام", style="cyan")
+        table.add_column("وضعیت", style="green")
+        table.add_column("تاریخ ایجاد", style="blue")
+        table.add_column("آخرین بازدید", style="magenta")
+        
+        for user in users:
+            status = "🟢 فعال" if (self.user_profile and user['name'] == self.user_profile.get_name()) else "⚪ غیرفعال"
+            created = user['created_at'][:10] if 'created_at' in user else "نامشخص"
+            last_seen = user['last_seen'][:10] if 'last_seen' in user else "نامشخص"
+            
+            table.add_row(user['name'], status, created, last_seen)
+        
+        self.console.print(table)
+    
+    def switch_to_user(self, user_name: str):
+        """تغییر به کاربر مشخص"""
+        try:
+            old_user = self.user_profile.get_name() if self.user_profile else "کاربر جدید"
+            
+            # Switch user
+            self.user_profile, is_new_user = self.multi_user.switch_user(user_name)
+            self.fox_personality = FoxPersonality(self.user_profile)
+            
+            if is_new_user:
+                # New user needs introduction
+                self.introduction = FoxIntroduction(self.user_profile)
+                intro_message = self.introduction.start_introduction()
+                self.console.print(Panel(intro_message, title=f"🦊 Fox - آشنایی با {user_name}", border_style="cyan"))
+            else:
+                # Existing user
+                greeting = self.fox_personality.get_greeting_style()
+                switch_message = f"سلام دوباره {user_name}! 🦊\n\n{greeting}\n\nخوشحالم که برگشتی!"
+                self.console.print(Panel(switch_message, title=f"🔄 تغییر کاربر: {old_user} → {user_name}", border_style="green"))
+            
+        except Exception as e:
+            self.console.print(f"خطا در تغییر کاربر: {e}", style="red")
+    
     def start_voice_conversation(self):
         """Start voice conversation mode"""
         if not self.voice.is_available()['speech_to_text']:
@@ -230,6 +311,37 @@ class PersonalAI:
         console.print("💡 برای خروج 'خروج' یا Ctrl+C", style="dim")
         
         def chat_callback(text):
+            # Handle pending user switch confirmation
+            if self.pending_user_switch:
+                if any(word in text.lower() for word in ['بله', 'آره', 'yes']):
+                    # Confirm switch
+                    user_name = self.pending_user_switch
+                    self.pending_user_switch = None
+                    self.switch_to_user(user_name)
+                    return
+                elif any(word in text.lower() for word in ['نه', 'خیر', 'no']):
+                    # Cancel switch
+                    self.pending_user_switch = None
+                    console.print("باشه! ادامه می‌دیم با همین کاربر 🦊", style="green")
+                    return
+                else:
+                    # Maybe they gave their real name
+                    potential_name = self.multi_user.detect_user_change(text)
+                    if potential_name:
+                        self.pending_user_switch = None
+                        self.switch_to_user(potential_name)
+                        return
+            
+            # Handle no current user (first time setup)
+            if not self.user_profile:
+                potential_name = self.multi_user.detect_user_change(text)
+                if potential_name:
+                    self.switch_to_user(potential_name)
+                    return
+                else:
+                    console.print("لطفاً اسمتان را بگویید تا بتوانم شما را بشناسم! 🦊", style="yellow")
+                    return
+            
             # Handle introduction process
             if self.introduction and not self.introduction.is_introduction_complete():
                 response = self.introduction.process_response(text)
@@ -238,6 +350,14 @@ class PersonalAI:
                     # Update relationship level
                     self.user_profile.update_relationship_level(1)
                 self.console.print(Panel(response, title="🦊 Fox", border_style="cyan"))
+                return
+            
+            # Check for user switch suggestion
+            suggested_user = self.multi_user.suggest_user_switch(text)
+            if suggested_user:
+                self.pending_user_switch = suggested_user
+                switch_message = self.multi_user.get_switch_message(suggested_user)
+                console.print(Panel(switch_message, title="🤔 تغییر کاربر؟", border_style="yellow"))
                 return
             
             # Record interaction

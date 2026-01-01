@@ -1,0 +1,19 @@
+{
+  "is_first_time": false,
+  "name": "حامد",
+  "interests": [
+    "برنامه‌نویسی",
+    "موسیقی"
+  ],
+  "personality_traits": [
+    "کنجکاو",
+    "شوخ‌طبع"
+  ],
+  "relationship_level": 1,
+  "favorite_topics": [],
+  "communication_style": "friendly",
+  "created_at": "2026-01-01T05:54:58.262095",
+  "last_interaction": null,
+  "interaction_count": 0,
+  "memories": []
+}
