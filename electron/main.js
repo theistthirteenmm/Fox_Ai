@@ -58,7 +58,7 @@ async function createWindow() {
     });
 
     // Load the web interface
-    mainWindow.loadURL('http://localhost:8080');
+    mainWindow.loadURL('http://localhost:7070');
 
     // Show window when ready
     mainWindow.once('ready-to-show', () => {

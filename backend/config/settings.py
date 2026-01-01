@@ -26,7 +26,7 @@ class Settings:
     
     # Web
     web_host: str = os.getenv("WEB_HOST", "0.0.0.0")
-    web_port: int = int(os.getenv("WEB_PORT", "8080"))
+    web_port: int = int(os.getenv("WEB_PORT", "7070"))
     
     # External APIs (Optional)
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
