@@ -725,19 +725,23 @@ async def websocket_endpoint(websocket: WebSocket):
             if not user_message.strip():
                 continue
                 
-            # Check for new user introduction
-            potential_new_user = user_manager.detect_new_user(user_message)
-            if potential_new_user and potential_new_user != user_manager.current_user:
-                # Switch to new user
-                user_manager.switch_user(potential_new_user)
+            # Check for new user introduction (فقط اگه واقعاً معرفی کردن)
+            # فقط اگه پیام کوتاه باشه و شامل کلمات معرفی باشه
+            if (len(user_message.split()) <= 10 and 
+                any(pattern in user_message.lower() for pattern in ["اسم من", "نام من", "من هستم", "صدام کن"])):
                 
-                # Check if profile exists
-                profile = user_manager.get_user_profile(potential_new_user)
-                if not profile:
-                    # Ask for relationship with Hamed
-                    relationship_question = user_manager.ask_for_relationship(potential_new_user)
-                    await websocket.send_text(json.dumps({
-                        "type": "message",
+                potential_new_user = user_manager.detect_new_user(user_message)
+                if potential_new_user and potential_new_user != user_manager.current_user:
+                    # Switch to new user
+                    user_manager.switch_user(potential_new_user)
+                    
+                    # Check if profile exists
+                    profile = user_manager.get_user_profile(potential_new_user)
+                    if not profile:
+                        # Ask for relationship with Hamed
+                        relationship_question = user_manager.ask_for_relationship(potential_new_user)
+                        await websocket.send_text(json.dumps({
+                            "type": "message",
                         "message": relationship_question,
                         "sender": "assistant"
                     }))
