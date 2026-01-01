@@ -14,7 +14,7 @@ from backend.core.internet import InternetAccess
 from backend.core.ai_connector import AIConnector
 from backend.config.settings import settings
 
-app = FastAPI(title="Personal AI Assistant")
+app = FastAPI(title="Fox - Personal AI Assistant")
 
 # Static files and templates
 app.mount("/static", StaticFiles(directory="web/static"), name="static")
