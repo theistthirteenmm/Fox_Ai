@@ -17,6 +17,7 @@ from backend.core.conversation import ConversationManager
 from backend.core.internet import InternetAccess
 from backend.core.ai_connector import AIConnector
 from backend.core.voice import VoiceManager
+from backend.core.personality import PersonalitySystem
 from backend.config.settings import settings
 
 console = Console()
@@ -31,6 +32,7 @@ class PersonalAI:
         self.internet = InternetAccess()
         self.ai_connector = AIConnector()
         self.voice = VoiceManager()
+        self.personality = PersonalitySystem()
         
     def display_welcome(self):
         voice_status = self.voice.is_available()
@@ -61,6 +63,10 @@ class PersonalAI:
 - `/voice` - شروع مکالمه صوتی
 - `/speak <متن>` - تولید گفتار
 - `/listen` - گوش دادن به گفتار
+- `/mood` - نمایش وضعیت احساسی
+- `/feel <احساس> <مقدار>` - تنظیم احساس (0-10)
+- `/happy`, `/sad`, `/excited`, `/serious` - تغییر سریع حالت
+- `/reset_mood` - بازگشت به حالت پایه
 - `/new` - شروع مکالمه جدید
 - `/clear` - پاک کردن مکالمه فعلی
 - `/quit` - خروج
@@ -143,6 +149,36 @@ class PersonalAI:
             
             elif command == 'listen':
                 self.listen_to_speech()
+                return True
+            
+            elif command == 'mood':
+                self.show_mood()
+                return True
+            
+            elif command == 'feel':
+                if args:
+                    parts = args.split(' ', 1)
+                    if len(parts) == 2:
+                        emotion, value = parts[0], parts[1]
+                        try:
+                            value = float(value)
+                            result = self.personality.set_emotion(emotion, value)
+                            console.print(result, style="green")
+                        except ValueError:
+                            console.print("مقدار باید عدد باشد (0-10)", style="red")
+                    else:
+                        console.print("استفاده: /feel <احساس> <مقدار>", style="yellow")
+                else:
+                    console.print("استفاده: /feel <احساس> <مقدار>", style="yellow")
+                return True
+            
+            elif command in ['happy', 'sad', 'excited', 'serious', 'funny']:
+                self.quick_mood_change(command)
+                return True
+            
+            elif command == 'reset_mood':
+                result = self.personality.reset_emotions()
+                console.print(result, style="green")
                 return True
             
             elif command == 'new':
@@ -545,6 +581,9 @@ class PersonalAI:
                 # Add user message to conversation
                 self.conversation.add_message("user", user_input)
                 
+                # Analyze user input for emotional context
+                self.personality.analyze_user_input(user_input)
+                
                 # Check if user is asking for web search
                 if any(keyword in user_input.lower() for keyword in ['جستجو کن', 'search', 'اینترنت', 'آخرین اخبار']):
                     # Add web search results to context
@@ -556,18 +595,26 @@ class PersonalAI:
                         
                         self.conversation.add_message("system", web_context)
                 
-                # Get enhanced context with memories
+                # Get enhanced context with memories AND personality
                 context_messages = self.conversation.get_enhanced_context()
                 
+                # Add personality prompt
+                personality_prompt = self.personality.get_personality_prompt()
+                context_messages.insert(0, ChatMessage("system", personality_prompt))
+                
                 # Get AI response
-                console.print("\n[bold green]دستیار[/bold green]: ", end="")
+                console.print("\n[bold green]Fox[/bold green]: ", end="")
                 
                 try:
                     response = self.llm.chat(context_messages)
-                    console.print(response)
+                    
+                    # Apply personality styling to response
+                    styled_response = self.personality.generate_response_style(response)
+                    
+                    console.print(styled_response)
                     
                     # Add AI response to conversation
-                    self.conversation.add_message("assistant", response)
+                    self.conversation.add_message("assistant", styled_response)
                     
                 except Exception as e:
                     console.print(f"خطا: {str(e)}", style="red")
@@ -577,6 +624,68 @@ class PersonalAI:
                 break
             except EOFError:
                 break
+    
+    def show_mood(self):
+        """Show current emotional state"""
+        emotions = self.personality.get_emotion_state()
+        dominant = self.personality.get_dominant_emotion()
+        
+        table = Table(title="🦊 وضعیت احساسی Fox")
+        table.add_column("احساس", style="cyan")
+        table.add_column("مقدار", justify="center")
+        table.add_column("نمودار", style="blue")
+        
+        emotion_names = {
+            "happiness": "خوشحالی",
+            "sadness": "غم", 
+            "anger": "عصبانیت",
+            "excitement": "هیجان",
+            "humor": "شوخ‌طبعی",
+            "seriousness": "جدیت",
+            "friendliness": "صمیمیت",
+            "curiosity": "کنجکاوی"
+        }
+        
+        for emotion, value in emotions.items():
+            name = emotion_names.get(emotion, emotion)
+            bar = "█" * int(value) + "░" * (10 - int(value))
+            marker = "👑" if emotion == dominant else ""
+            
+            table.add_row(
+                f"{marker} {name}",
+                f"{value:.1f}/10",
+                bar
+            )
+        
+        console.print(table)
+        console.print(f"\n🎭 حالت غالب: {emotion_names.get(dominant, dominant)}", style="bold blue")
+    
+    def quick_mood_change(self, mood: str):
+        """Quick mood changes"""
+        changes = {
+            "happy": {"happiness": 8.0, "sadness": 2.0, "humor": 7.0},
+            "sad": {"sadness": 7.0, "happiness": 3.0, "seriousness": 6.0},
+            "excited": {"excitement": 9.0, "happiness": 7.0, "curiosity": 8.0},
+            "serious": {"seriousness": 9.0, "humor": 2.0, "friendliness": 5.0},
+            "funny": {"humor": 9.0, "happiness": 8.0, "excitement": 6.0}
+        }
+        
+        if mood in changes:
+            for emotion, value in changes[mood].items():
+                self.personality.set_emotion(emotion, value)
+            
+            console.print(f"🎭 Fox حالا {mood} است!", style="green")
+            
+            # Show a mood-appropriate message
+            greetings = {
+                "happy": "یه‌هو! حالم خیلی خوبه! 😊",
+                "sad": "اوه... کمی غمگینم... 😔", 
+                "excited": "واااای! چقدر هیجان‌زده‌ام! 🚀",
+                "serious": "حالا در حالت جدی هستم. 🎯",
+                "funny": "آماده شوخی و خنده! 😄"
+            }
+            
+            console.print(f"🦊 {greetings.get(mood, 'حالتم تغییر کرد!')}", style="blue")
 
 def main():
     ai = PersonalAI()

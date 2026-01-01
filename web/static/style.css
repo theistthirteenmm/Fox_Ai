@@ -221,6 +221,20 @@ header h1 {
     transform: none;
 }
 
+.browser-info {
+    padding: 10px;
+    margin: 10px 0;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #856404;
+}
+
+.info-message {
+    text-align: center;
+}
+
 @media (max-width: 768px) {
     .container {
         height: 100vh;

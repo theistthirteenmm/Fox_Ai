@@ -14,6 +14,7 @@ from backend.core.internet import InternetAccess
 from backend.core.ai_connector import AIConnector
 from backend.config.settings import settings
 from web.terminal import add_terminal_support
+from backend.core.personality import PersonalitySystem
 
 app = FastAPI(title="Fox - Personal AI Assistant")
 
@@ -29,6 +30,7 @@ llm = LLMEngine(
 conversation_manager = ConversationManager()
 internet = InternetAccess()
 ai_connector = AIConnector()
+personality = PersonalitySystem()
 
 # Add terminal support
 add_terminal_support(app)
@@ -61,6 +63,9 @@ async def websocket_endpoint(websocket: WebSocket):
             # Add user message to conversation
             conversation_manager.add_message("user", user_message)
             
+            # Analyze user input for emotional context
+            personality.analyze_user_input(user_message)
+            
             # Send typing indicator
             await websocket.send_text(json.dumps({
                 "type": "typing",
@@ -82,16 +87,24 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Get enhanced context with memories
                 context_messages = conversation_manager.get_enhanced_context()
                 
+                # Add personality prompt
+                personality_prompt = personality.get_personality_prompt()
+                from backend.core.llm_engine import ChatMessage
+                context_messages.insert(0, ChatMessage("system", personality_prompt))
+                
                 # Get AI response
                 response = llm.chat(context_messages)
                 
+                # Apply personality styling
+                styled_response = personality.generate_response_style(response)
+                
                 # Add AI response to conversation
-                conversation_manager.add_message("assistant", response)
+                conversation_manager.add_message("assistant", styled_response)
                 
                 # Send response to client
                 await websocket.send_text(json.dumps({
                     "type": "message",
-                    "message": response,
+                    "message": styled_response,
                     "sender": "assistant"
                 }))
                 
@@ -173,5 +186,28 @@ async def get_webpage(url: str):
     try:
         content = internet.get_webpage_content(url)
         return {"content": content}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/mood")
+async def get_mood():
+    """Get current emotional state"""
+    try:
+        emotions = personality.get_emotion_state()
+        dominant = personality.get_dominant_emotion()
+        return {
+            "emotions": emotions,
+            "dominant": dominant,
+            "greeting": personality.get_greeting()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/mood")
+async def set_mood(emotion: str, value: float):
+    """Set specific emotion"""
+    try:
+        result = personality.set_emotion(emotion, value)
+        return {"message": result, "emotions": personality.get_emotion_state()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

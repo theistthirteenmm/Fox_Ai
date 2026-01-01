@@ -38,18 +38,31 @@ class ChatApp {
     }
     
     setupVoiceRecognition() {
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        // Check if browser supports speech recognition
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            this.voiceButton.style.display = 'none';
+            console.log('Speech recognition not supported in this browser');
+            return;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        try {
             this.recognition = new SpeechRecognition();
             
             this.recognition.continuous = false;
             this.recognition.interimResults = false;
-            this.recognition.lang = 'fa-IR'; // Persian
+            this.recognition.lang = 'fa-IR'; // Persian first
             
             this.recognition.onstart = () => {
                 this.isRecording = true;
                 this.voiceButton.classList.add('recording');
                 this.voiceButton.title = 'در حال ضبط... کلیک کنید تا متوقف شود';
+                this.voiceButton.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <rect x="6" y="6" width="12" height="12" fill="currentColor"/>
+                    </svg>
+                `;
             };
             
             this.recognition.onresult = (event) => {
@@ -61,14 +74,42 @@ class ChatApp {
             
             this.recognition.onerror = (event) => {
                 console.error('Speech recognition error:', event.error);
+                
+                if (event.error === 'not-allowed') {
+                    alert('لطفاً اجازه دسترسی به میکروفن را بدهید');
+                } else if (event.error === 'no-speech') {
+                    alert('صدایی شنیده نشد، دوباره تلاش کنید');
+                } else {
+                    // Try English if Persian failed
+                    if (this.recognition.lang === 'fa-IR') {
+                        this.recognition.lang = 'en-US';
+                        setTimeout(() => this.recognition.start(), 100);
+                        return;
+                    }
+                }
+                
                 this.stopRecording();
             };
             
             this.recognition.onend = () => {
                 this.stopRecording();
             };
-        } else {
+            
+            // Show microphone button
+            this.voiceButton.style.display = 'flex';
+            
+        } catch (error) {
+            console.error('Failed to initialize speech recognition:', error);
             this.voiceButton.style.display = 'none';
+            
+            // Show browser info message
+            const browserInfo = document.getElementById('browserInfo');
+            if (browserInfo) {
+                browserInfo.style.display = 'block';
+                setTimeout(() => {
+                    browserInfo.style.display = 'none';
+                }, 10000); // Hide after 10 seconds
+            }
         }
     }
     
@@ -86,6 +127,13 @@ class ChatApp {
         this.isRecording = false;
         this.voiceButton.classList.remove('recording');
         this.voiceButton.title = 'ضبط صوتی';
+        this.voiceButton.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M12 1C10.34 1 9 2.34 9 4V12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12V4C15 2.34 13.66 1 12 1Z" fill="currentColor"/>
+                <path d="M19 10V12C19 16.42 15.42 20 11 20H9V22H15C19.42 22 23 18.42 23 14V10H19Z" fill="currentColor"/>
+                <path d="M5 10V12C5 15.31 7.69 18 11 18V20C6.58 20 3 16.42 3 12V10H5Z" fill="currentColor"/>
+            </svg>
+        `;
     }
     
     connect() {
