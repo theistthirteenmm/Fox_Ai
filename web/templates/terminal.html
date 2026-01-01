@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🦊 Fox Terminal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: #333;
+            padding: 10px;
+            text-align: center;
+            color: #fff;
+        }
+        
+        .terminal {
+            flex: 1;
+            background: #000;
+            padding: 20px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .input-container {
+            background: #333;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .prompt {
+            color: #00ff00;
+            margin-left: 10px;
+        }
+        
+        #commandInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .cursor {
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🦊 Fox Terminal - Remote CLI Access</h1>
+    </div>
+    
+    <div class="terminal" id="terminal">
+        <div>🦊 Fox Terminal - Connecting...</div>
+    </div>
+    
+    <div class="input-container">
+        <span class="prompt">$</span>
+        <input type="text" id="commandInput" placeholder="Type your command..." autofocus>
+    </div>
+
+    <script>
+        class FoxTerminal {
+            constructor() {
+                this.terminal = document.getElementById('terminal');
+                this.input = document.getElementById('commandInput');
+                this.ws = null;
+                
+                this.connect();
+                this.setupInput();
+            }
+            
+            connect() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/terminal`;
+                
+                this.ws = new WebSocket(wsUrl);
+                
+                this.ws.onopen = () => {
+                    this.addOutput('🦊 Connected to Fox CLI\n');
+                };
+                
+                this.ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'output') {
+                        this.addOutput(data.data);
+                    } else if (data.type === 'error') {
+                        this.addOutput(`❌ ${data.data}\n`);
+                    }
+                };
+                
+                this.ws.onclose = () => {
+                    this.addOutput('❌ Connection closed. Refresh to reconnect.\n');
+                };
+                
+                this.ws.onerror = () => {
+                    this.addOutput('❌ Connection error\n');
+                };
+            }
+            
+            setupInput() {
+                this.input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        const command = this.input.value;
+                        if (command.trim()) {
+                            this.sendCommand(command);
+                            this.addOutput(`$ ${command}\n`);
+                            this.input.value = '';
+                        }
+                    }
+                });
+            }
+            
+            sendCommand(command) {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({
+                        type: 'input',
+                        data: command
+                    }));
+                }
+            }
+            
+            addOutput(text) {
+                this.terminal.textContent += text;
+                this.terminal.scrollTop = this.terminal.scrollHeight;
+            }
+        }
+        
+        // Initialize terminal when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new FoxTerminal();
+        });
+    </script>
+</body>
+</html>

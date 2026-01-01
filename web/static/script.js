@@ -3,21 +3,26 @@ class ChatApp {
         this.ws = null;
         this.messageInput = document.getElementById('messageInput');
         this.sendButton = document.getElementById('sendButton');
+        this.voiceButton = document.getElementById('voiceButton');
         this.messages = document.getElementById('messages');
         this.status = document.getElementById('status');
         this.typing = document.getElementById('typing');
+        this.isRecording = false;
+        this.recognition = null;
         
         this.init();
     }
     
     init() {
         this.setupEventListeners();
+        this.setupVoiceRecognition();
         this.connect();
         this.setWelcomeTime();
     }
     
     setupEventListeners() {
         this.sendButton.addEventListener('click', () => this.sendMessage());
+        this.voiceButton.addEventListener('click', () => this.toggleVoiceRecording());
         
         this.messageInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -30,6 +35,57 @@ class ChatApp {
             this.adjustTextareaHeight();
             this.updateSendButton();
         });
+    }
+    
+    setupVoiceRecognition() {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            this.recognition = new SpeechRecognition();
+            
+            this.recognition.continuous = false;
+            this.recognition.interimResults = false;
+            this.recognition.lang = 'fa-IR'; // Persian
+            
+            this.recognition.onstart = () => {
+                this.isRecording = true;
+                this.voiceButton.classList.add('recording');
+                this.voiceButton.title = 'در حال ضبط... کلیک کنید تا متوقف شود';
+            };
+            
+            this.recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                this.messageInput.value = transcript;
+                this.adjustTextareaHeight();
+                this.updateSendButton();
+            };
+            
+            this.recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                this.stopRecording();
+            };
+            
+            this.recognition.onend = () => {
+                this.stopRecording();
+            };
+        } else {
+            this.voiceButton.style.display = 'none';
+        }
+    }
+    
+    toggleVoiceRecording() {
+        if (!this.recognition) return;
+        
+        if (this.isRecording) {
+            this.recognition.stop();
+        } else {
+            this.recognition.start();
+        }
+    }
+    
+    stopRecording() {
+        this.isRecording = false;
+        this.voiceButton.classList.remove('recording');
+        this.voiceButton.title = 'ضبط صوتی';
     }
     
     connect() {

@@ -38,9 +38,16 @@
 
         <div class="input-container">
             <div class="input-wrapper">
+                <button id="voiceButton" title="ضبط صوتی">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 1C10.34 1 9 2.34 9 4V12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12V4C15 2.34 13.66 1 12 1Z" fill="currentColor"/>
+                        <path d="M19 10V12C19 16.42 15.42 20 11 20H9V22H15C19.42 22 23 18.42 23 14V10H19Z" fill="currentColor"/>
+                        <path d="M5 10V12C5 15.31 7.69 18 11 18V20C6.58 20 3 16.42 3 12V10H5Z" fill="currentColor"/>
+                    </svg>
+                </button>
                 <textarea 
                     id="messageInput" 
-                    placeholder="پیام خود را بنویسید..."
+                    placeholder="پیام خود را بنویسید یا روی میکروفون کلیک کنید..."
                     rows="1"
                 ></textarea>
                 <button id="sendButton" disabled>

@@ -13,6 +13,7 @@ from backend.core.conversation import ConversationManager
 from backend.core.internet import InternetAccess
 from backend.core.ai_connector import AIConnector
 from backend.config.settings import settings
+from web.terminal import add_terminal_support
 
 app = FastAPI(title="Fox - Personal AI Assistant")
 
@@ -29,9 +30,16 @@ conversation_manager = ConversationManager()
 internet = InternetAccess()
 ai_connector = AIConnector()
 
+# Add terminal support
+add_terminal_support(app)
+
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
+@app.get("/terminal", response_class=HTMLResponse)
+async def terminal_page(request: Request):
+    return templates.TemplateResponse("terminal.html", {"request": request})
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

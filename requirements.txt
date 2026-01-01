@@ -15,12 +15,13 @@ requests==2.31.0
 beautifulsoup4==4.12.2
 ollama==0.6.1
 
+# Voice support (optional)
+SpeechRecognition==3.10.0
+pyttsx3==2.90
+pyaudio==0.2.11
+
 # Optional external AI APIs
 # Uncomment if you want to use external AI services
 # openai==1.3.7
 # anthropic==0.7.7
 # google-generativeai==0.3.2
-
-# Optional for future voice features
-# whisper==1.1.10
-# pyttsx3==2.90
