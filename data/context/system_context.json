@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-01-01T20:23:02.077268",
+  "time_info": {
+    "current_time": "20:23",
+    "current_date": "2026-01-01",
+    "day_of_week": "Thursday",
+    "persian_date": "1405/1/1",
+    "season": "زمستان"
+  },
+  "system_info": {
+    "cpu_usage": "0.0 us",
+    "memory_usage": "20.6% (3299MB/15991MB)",
+    "disk_usage": "72% (26G/38G)",
+    "fox_status": "running"
+  },
+  "weather_info": {
+    "condition": "برفی",
+    "temperature": "25°C",
+    "suggestion": "آفتاب خوبیه، بیرون برو"
+  },
+  "user_activity": {
+    "last_interaction": "20:23",
+    "session_duration": "نامشخص",
+    "activity_level": "متوسط"
+  }
+}

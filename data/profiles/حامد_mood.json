@@ -1,0 +1,29 @@
+{
+  "daily_moods": [
+    {
+      "date": "2026-01-01",
+      "time": "20:23",
+      "mood": "positive",
+      "message": "امروز خیلی خوشحالم!"
+    },
+    {
+      "date": "2026-01-01",
+      "time": "20:24",
+      "mood": "neutral",
+      "message": "سلام"
+    },
+    {
+      "date": "2026-01-01",
+      "time": "20:25",
+      "mood": "neutral",
+      "message": "اسمت چیه"
+    },
+    {
+      "date": "2026-01-01",
+      "time": "20:31",
+      "mood": "neutral",
+      "message": "اسمت چیه"
+    }
+  ],
+  "overall_trend": "neutral"
+}

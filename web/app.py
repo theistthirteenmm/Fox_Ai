@@ -90,7 +90,24 @@ async def handle_web_command(command: str, websocket: WebSocket) -> str:
 • /add_openai [API_KEY] - اضافه کردن OpenAI
 • /add_claude [API_KEY] - اضافه کردن Claude
 • /add_gemini [API_KEY] - اضافه کردن Gemini
-• /add_custom [نام] [API_KEY] [URL] - اضافه کردن AI دلخواه"""
+• /add_custom [نام] [API_KEY] [URL] - اضافه کردن AI دلخواه
+
+🕐 زمان و محیط:
+• /time_greeting - سلام بر اساس زمان
+• /time_suggestion - پیشنهاد بر اساس زمان
+• /context - وضعیت سیستم و محیط
+
+📊 حالت و احساسات:
+• /mood_stats - آمار حالات روحی
+
+🔔 دستیار پیشگام:
+• /suggest - پیشنهاد تصادفی
+• /remind [متن] [زمان] - یادآوری
+
+🎮 بازی‌سازی:
+• /fox_status - وضعیت و سطح Fox
+• /challenge - چالش روزانه
+• /fox_mood - حالت Fox"""
     
     elif cmd == 'models':
         try:
@@ -538,6 +555,63 @@ speechSynthesis.getVoices().forEach((voice, i) => {
         ai_manager.add_provider(provider)
         return f"✅ {name} اضافه شد!"
     
+    elif cmd == 'time_greeting':
+        from backend.core.time_responses import time_responses
+        return time_responses.get_time_greeting()
+    
+    elif cmd == 'time_suggestion':
+        from backend.core.time_responses import time_responses
+        return time_responses.get_time_suggestion()
+    
+    elif cmd == 'mood_stats':
+        from backend.core.mood_tracker import mood_tracker
+        return mood_tracker.get_mood_stats()
+    
+    elif cmd == 'context':
+        from backend.core.context_aware import context_aware
+        return context_aware.get_context_summary()
+    
+    elif cmd == 'suggest':
+        from backend.core.proactive_assistant import proactive_assistant
+        suggestion = proactive_assistant.get_random_suggestion()
+        return f"💡 {suggestion}"
+    
+    elif cmd == 'remind':
+        if len(parts) < 3:
+            return "❌ فرمت: /remind [متن] [زمان]\nمثال: /remind قرار ملاقات 14:30"
+        
+        text = " ".join(parts[1:-1])
+        time_str = parts[-1]
+        
+        from backend.core.proactive_assistant import proactive_assistant
+        from datetime import datetime, timedelta
+        
+        try:
+            # پردازش ساده زمان
+            if ":" in time_str:
+                hour, minute = map(int, time_str.split(":"))
+                remind_time = datetime.now().replace(hour=hour, minute=minute, second=0)
+                if remind_time <= datetime.now():
+                    remind_time += timedelta(days=1)
+            else:
+                remind_time = datetime.now() + timedelta(minutes=int(time_str))
+            
+            return proactive_assistant.add_reminder(text, remind_time.isoformat())
+        except:
+            return "❌ فرمت زمان نادرست"
+    
+    elif cmd == 'fox_status':
+        from backend.core.fox_gamification import fox_game
+        return fox_game.get_fox_status()
+    
+    elif cmd == 'challenge':
+        from backend.core.fox_gamification import fox_game
+        return fox_game.get_daily_challenge()
+    
+    elif cmd == 'fox_mood':
+        from backend.core.fox_gamification import fox_game
+        return fox_game.get_fox_mood()
+    
     return f"دستور '{cmd}' شناخته نشد. /help را امتحان کنید."
 
 # Add terminal support
@@ -649,6 +723,48 @@ async def websocket_endpoint(websocket: WebSocket):
                         enhanced_response = multi_ai_system.get_best_response(user_message)
                         if enhanced_response and enhanced_response != response:
                             response = enhanced_response
+                except:
+                    pass
+                
+                # تحلیل حالت و اضافه کردن پاسخ مناسب
+                try:
+                    from backend.core.mood_tracker import mood_tracker
+                    mood = mood_tracker.analyze_mood(user_message)
+                    mood_response = mood_tracker.get_mood_response(mood)
+                    
+                    # اگر حالت منفی باشه، پاسخ همدلانه اضافه کن
+                    if mood == "negative":
+                        response = f"{mood_response}\n\n{response}"
+                except:
+                    pass
+                
+                # اضافه کردن context آگاهی
+                try:
+                    from backend.core.time_responses import time_responses
+                    if any(word in user_message.lower() for word in ["سلام", "درود", "صبح", "ظهر", "شب"]):
+                        time_greeting = time_responses.get_time_greeting()
+                        if "سلام" in user_message.lower():
+                            response = f"{time_greeting}\n\n{response}"
+                except:
+                    pass
+                
+                # بروزرسانی gamification
+                try:
+                    from backend.core.fox_gamification import fox_game
+                    exp_message = fox_game.gain_experience("conversation")
+                    # فقط گاهی اوقات نمایش بده تا مزاحم نباشه
+                    import random
+                    if random.random() < 0.1:  # 10% احتمال
+                        response += f"\n\n{exp_message}"
+                except:
+                    pass
+                
+                # بررسی پیشنهادات proactive
+                try:
+                    from backend.core.proactive_assistant import proactive_assistant
+                    suggestion = proactive_assistant.give_suggestion()
+                    if suggestion and random.random() < 0.2:  # 20% احتمال
+                        response += f"\n\n{suggestion}"
                 except:
                     pass
                 

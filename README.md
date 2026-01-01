@@ -1,43 +1,25 @@
-# 🦊 Fox AI Assistant - Desktop Edition
+# 🦊 Fox AI Assistant - Web Edition
 
-یک دستیار هوشمند فارسیزبان با اپلیکیشن دسکتاپ کامل
+یک دستیار هوشمند فارسیزبان با رابط وب
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
-![Electron](https://img.shields.io/badge/Electron-28.0+-purple.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)
 ![Ollama](https://img.shields.io/badge/Ollama-Latest-orange.svg)
 
 ## 🚀 راه‌اندازی سریع
 
 ```bash
-./start_fox_desktop.sh
+python start_web.py
 ```
 
 **همین!** این دستور:
-- ✅ Electron app را راه‌اندازی می‌کند
-- ✅ وب سرور را خودکار شروع می‌کند
-- ✅ همه dependencies را نصب می‌کند
-- ✅ هم روی دسکتاپ و هم روی موبایل/مرورگر قابل دسترس
+- ✅ وب سرور را شروع می‌کند
+- ✅ همه dependencies را بارگذاری می‌کند
+- ✅ روی کامپیوتر و موبایل قابل دسترس
 
 **دسترسی:**
-- 🖥️ **Desktop**: Electron App (اپ بومی)
-- 🌐 **Browser**: http://localhost:8080 (کامپیوتر و موبایل)
+- 🌐 **Browser**: http://localhost:4444 (کامپیوتر و موبایل)
 - 📱 **Mobile**: همون آدرس در مرورگر موبایل
-
-## 🖥️ اپلیکیشن دسکتاپ
-
-### ویژگی‌های Desktop:
-- 🎨 **رابط بومی** با منوهای فارسی
-- 🔔 **اعلان‌های دسکتاپ**
-- ⌨️ **میانبرهای کیبورد** (F12, F11, Ctrl+R)
-- 🔒 **امنیت بالا**
-- 📱 **چند پلتفرم** (Windows, macOS, Linux)
-
-### میانبرها:
-- `F12` - ابزار توسعه‌دهنده
-- `F11` - تمام صفحه
-- `Ctrl+R` - بازخوانی
-- `Ctrl+Q` - خروج
 
 ## ✨ ویژگی‌های Fox AI
 
@@ -84,7 +66,6 @@
 
 ### پیش‌نیازها:
 - Python 3.8+
-- Node.js 16+
 - Ollama
 
 ### نصب:
@@ -92,45 +73,23 @@
 # نصب Python dependencies
 source venv/bin/activate
 pip install -r requirements.txt
-
-# نصب Electron dependencies  
-cd electron
-npm install
 ```
 
 ### اجرا:
 ```bash
 # سرور وب
 python start_web.py
-
-# اپلیکیشن دسکتاپ
-cd electron
-npm start
 ```
-
-## 📦 ساخت فایل نصب
-
-```bash
-cd electron
-npm run build
-```
-
-فایل‌های نصب در `electron/dist/` ساخته می‌شوند.
 
 ## 🔧 رابط‌های مختلف
 
-### 1. Desktop App (پیشنهادی)
-```bash
-./start_fox_desktop.sh
-```
-
-### 2. Web Interface
+### 1. Web Interface (پیشنهادی)
 ```bash
 python start_web.py
-# http://localhost:8080
+# http://localhost:4444
 ```
 
-### 3. CLI Interface  
+### 2. CLI Interface  
 ```bash
 python cli/main.py
 ```
