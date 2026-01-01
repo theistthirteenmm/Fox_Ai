@@ -23,6 +23,7 @@ from backend.core.introduction import FoxIntroduction
 from backend.core.multi_user import MultiUserManager
 from backend.core.fox_experience import FoxExperienceSystem
 from backend.core.fox_learning import FoxLearningSystem
+from backend.commands.api_commands import handle_api_command
 from backend.config.settings import settings
 
 console = Console()
@@ -248,6 +249,14 @@ class PersonalAI:
                 if parts and len(parts) > 1:
                     user_name = ' '.join(parts[1:])
                     self.switch_to_user(user_name)
+                else:
+                    console.print("لطفاً نام کاربر را وارد کنید: /switch <نام>", style="yellow")
+                return True
+            
+            elif command == 'api':
+                result = handle_api_command(user_input.split())
+                console.print(result, style="cyan")
+                return True
                 else:
                     console.print("استفاده: /switch <نام کاربر>", style="yellow")
                 return True

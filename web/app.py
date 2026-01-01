@@ -17,6 +17,7 @@ from web.terminal import add_terminal_support
 from backend.core.personality import PersonalitySystem
 from backend.core.user_profile import UserProfile
 from backend.core.fox_learning import FoxLearningSystem
+from backend.commands.api_commands import handle_api_command
 
 app = FastAPI(title="Fox - Personal AI Assistant")
 
@@ -139,6 +140,10 @@ async def handle_web_command(command: str, websocket: WebSocket) -> str:
             except Exception as e:
                 return f"❌ خطا در جستجو: {str(e)}"
         return "استفاده: /search <متن جستجو>"
+    
+    elif cmd == 'api':
+        result = handle_api_command(parts)
+        return result
     
     elif cmd == 'memory':
         try:

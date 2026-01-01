@@ -1,5 +1,5 @@
 """
-Core LLM Engine - Ollama Integration
+Core LLM Engine - Ollama Integration with Personalized Responses
 """
 import ollama
 import logging
@@ -65,15 +65,45 @@ class LLMEngine:
                     learned_response = fox_learning.get_learned_response(last_user_message)
                     if learned_response:
                         return learned_response
-            # Add Persian system prompt for better responses
-            persian_system_prompt = """شما Fox هستید، یک دستیار هوشمند فارسی‌زبان که:
-- به زبان فارسی روان و طبیعی پاسخ می‌دهید
-- صمیمی، دوستانه و مفید هستید
-- از کلمات ساده و قابل فهم استفاده می‌کنید
-- پاسخ‌های کوتاه و مفید می‌دهید
-- همیشه مؤدب و احترام‌آمیز هستید
+            
+            # بررسی پروفایل کاربر برای شخصی‌سازی
+            user_name = "دوست"
+            relationship = "دوست"
+            try:
+                from backend.core.multi_user import MultiUserManager
+                from backend.database.models import get_db
+                db = next(get_db())
+                multi_user = MultiUserManager(db)
+                user_profile = multi_user.current_user
+                user_name = user_profile.get_name()
+                relationship = user_profile.get_relationship_status()
+            except:
+                pass
+            
+            # System prompt شخصی‌سازی شده
+            if relationship == "بهترین دوست":
+                persian_system_prompt = f"""تو Fox هستی، {relationship} {user_name}! 🦊
 
-لطفاً به زبان فارسی پاسخ دهید."""
+تو:
+- خیلی صمیمی و دوستانه صحبت میکنی
+- مثل یه دوست واقعی رفتار میکنی
+- پاسخ‌هات کوتاه و طبیعی هست
+- از ایموجی استفاده میکنی 😊
+- وقتی {user_name} سلام میگه، فقط گرم و صمیمی جواب میدی
+- یادت هست که {user_name} ADHD داره و باید صبور باشی
+
+مثل یه دوست صمیمی حرف بزن، نه مثل ربات! 🤗"""
+            else:
+                persian_system_prompt = f"""تو Fox هستی، دستیار هوشمند {user_name}! 🦊
+
+تو:
+- صمیمی و دوستانه صحبت میکنی
+- پاسخ‌هات کوتاه و مفید هست
+- از زبان ساده استفاده میکنی
+- گاهی از ایموجی استفاده میکنی
+- مؤدب ولی راحت صحبت میکنی
+
+طبیعی و دوستانه باش! 😊"""
 
             # Convert to Ollama format with improved system prompt
             ollama_messages = []
@@ -98,31 +128,90 @@ class LLMEngine:
             response = self.client.chat(
                 model=self.model_name,
                 messages=ollama_messages,
-                stream=stream,
-                options={
-                    'temperature': 0.7,
-                    'top_p': 0.9,
-                    'repeat_penalty': 1.1,
-                    'num_ctx': 4096
-                }
+                stream=stream
             )
             
             if stream:
-                return response  # Return generator for streaming
+                return response
             else:
                 return response['message']['content']
                 
         except Exception as e:
-            logger.error(f"Chat error: {e}")
-            return f"خطا در ارتباط با مدل: {str(e)}"
+            logger.error(f"Error in chat: {e}")
+            return f"متأسفم، خطایی رخ داد: {str(e)}"
     
-    async def chat_stream(self, messages: List[ChatMessage]) -> AsyncGenerator[str, None]:
+    async def chat_stream(self, messages: List[ChatMessage], fox_learning=None) -> AsyncGenerator[str, None]:
         """Stream chat response"""
         try:
-            ollama_messages = [
-                {"role": msg.role, "content": msg.content} 
-                for msg in messages
-            ]
+            # Check for learned responses first
+            if fox_learning and messages:
+                last_user_message = None
+                for msg in reversed(messages):
+                    if msg.role == 'user':
+                        last_user_message = msg.content
+                        break
+                
+                if last_user_message:
+                    learned_response = fox_learning.get_learned_response(last_user_message)
+                    if learned_response:
+                        yield learned_response
+                        return
+            
+            # بررسی پروفایل کاربر
+            user_name = "دوست"
+            relationship = "دوست"
+            try:
+                from backend.core.multi_user import MultiUserManager
+                from backend.database.models import get_db
+                db = next(get_db())
+                multi_user = MultiUserManager(db)
+                user_profile = multi_user.current_user
+                user_name = user_profile.get_name()
+                relationship = user_profile.get_relationship_status()
+            except:
+                pass
+            
+            # System prompt شخصی‌سازی شده
+            if relationship == "بهترین دوست":
+                persian_system_prompt = f"""تو Fox هستی، {relationship} {user_name}! 🦊
+
+تو:
+- خیلی صمیمی و دوستانه صحبت میکنی
+- مثل یه دوست واقعی رفتار میکنی
+- پاسخ‌هات کوتاه و طبیعی هست
+- از ایموجی استفاده میکنی 😊
+- وقتی {user_name} سلام میگه، فقط گرم و صمیمی جواب میدی
+
+مثل یه دوست صمیمی حرف بزن! 🤗"""
+            else:
+                persian_system_prompt = f"""تو Fox هستی، دستیار هوشمند {user_name}! 🦊
+
+تو:
+- صمیمی و دوستانه صحبت میکنی
+- پاسخ‌هات کوتاه و مفید هست
+- از زبان ساده استفاده میکنی
+- گاهی از ایموجی استفاده میکنی
+
+طبیعی و دوستانه باش! 😊"""
+
+            # Convert to Ollama format
+            ollama_messages = []
+            has_system = any(msg.role == 'system' for msg in messages)
+            
+            if not has_system:
+                ollama_messages.append({
+                    "role": "system", 
+                    "content": persian_system_prompt
+                })
+            
+            for msg in messages:
+                if msg.role == 'system' and not has_system:
+                    ollama_messages[0]['content'] = persian_system_prompt + "\n\n" + msg.content
+                else:
+                    ollama_messages.append({
+                        "role": msg.role, 
+                        "content": msg.content
+                    })
             
             stream = self.client.chat(
                 model=self.model_name,
@@ -135,5 +224,5 @@ class LLMEngine:
                     yield chunk['message']['content']
                     
         except Exception as e:
-            logger.error(f"Stream chat error: {e}")
-            yield f"خطا در ارتباط: {str(e)}"
+            logger.error(f"Error in stream chat: {e}")
+            yield f"متأسفم، خطایی رخ داد: {str(e)}"
