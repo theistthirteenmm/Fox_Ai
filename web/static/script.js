@@ -36,10 +36,62 @@ class ChatApp {
             }
         });
         
-        this.messageInput.addEventListener('input', () => {
+        this.messageInput.addEventListener('input', (e) => {
             this.adjustTextareaHeight();
             this.updateSendButton();
+            this.handleCommandSuggestions(e.target.value);
         });
+    }
+    
+    handleCommandSuggestions(value) {
+        if (value === '/') {
+            this.showCommandMenu();
+        } else {
+            this.hideCommandMenu();
+        }
+    }
+    
+    showCommandMenu() {
+        let menu = document.getElementById('commandMenu');
+        if (!menu) {
+            menu = document.createElement('div');
+            menu.id = 'commandMenu';
+            menu.className = 'command-menu';
+            menu.innerHTML = `
+                <div class="command-item" data-cmd="/help">📚 /help - نمایش راهنما</div>
+                <div class="command-item" data-cmd="/teach ">🎓 /teach - آموزش پاسخ خاص</div>
+                <div class="command-item" data-cmd="/learn ">📖 /learn - آموزش دانش جدید</div>
+                <div class="command-item" data-cmd="/learned">📊 /learned - آمار یادگیری</div>
+                <div class="command-item" data-cmd="/mood">😊 /mood - وضعیت احساسی</div>
+                <div class="command-item" data-cmd="/web ">🌐 /web - جستجو در اینترنت</div>
+            `;
+            
+            menu.addEventListener('click', (e) => {
+                if (e.target.classList.contains('command-item')) {
+                    const cmd = e.target.getAttribute('data-cmd');
+                    this.messageInput.value = cmd;
+                    this.messageInput.focus();
+                    this.hideCommandMenu();
+                    if (cmd.endsWith(' ')) {
+                        this.messageInput.setSelectionRange(cmd.length, cmd.length);
+                    }
+                }
+            });
+            
+            document.body.appendChild(menu);
+        }
+        
+        const rect = this.messageInput.getBoundingClientRect();
+        menu.style.left = rect.left + 'px';
+        menu.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
+        menu.style.display = 'block';
+    }
+    
+    hideCommandMenu() {
+        const menu = document.getElementById('commandMenu');
+        if (menu) {
+            menu.style.display = 'none';
+        }
     }
     
     setupScrollObserver() {
