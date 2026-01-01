@@ -70,10 +70,16 @@ class ChatApp {
                 if (e.target.classList.contains('command-item')) {
                     const cmd = e.target.getAttribute('data-cmd');
                     this.messageInput.value = cmd;
-                    this.messageInput.focus();
                     this.hideCommandMenu();
-                    if (cmd.endsWith(' ')) {
-                        this.messageInput.setSelectionRange(cmd.length, cmd.length);
+                    
+                    // Auto-send simple commands, focus for complex ones
+                    if (cmd === '/help' || cmd === '/learned' || cmd === '/mood') {
+                        this.sendMessage();
+                    } else {
+                        this.messageInput.focus();
+                        if (cmd.endsWith(' ')) {
+                            this.messageInput.setSelectionRange(cmd.length, cmd.length);
+                        }
                     }
                 }
             });

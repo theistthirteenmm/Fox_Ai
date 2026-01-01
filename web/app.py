@@ -42,8 +42,10 @@ fox_learning = FoxLearningSystem(user_profile)
 
 async def handle_web_command(command: str, websocket: WebSocket) -> str:
     """Handle web chat commands"""
+    print(f"🔍 Command received: {command}")  # Debug
     parts = command.strip().split()
     cmd = parts[0][1:].lower()  # Remove /
+    print(f"🔍 Parsed command: {cmd}")  # Debug
     
     if cmd == 'help':
         return """دستورات موجود:
@@ -78,14 +80,23 @@ async def handle_web_command(command: str, websocket: WebSocket) -> str:
 • اطلاعات فرهنگی: {stats['cultural_knowledge']}"""
     
     elif cmd == 'mood':
-        return f"وضعیت احساسی Fox: {personality.get_current_mood()}"
+        try:
+            mood = personality.get_current_mood()
+            return f"😊 وضعیت احساسی Fox: {mood}"
+        except:
+            return "😊 وضعیت احساسی Fox: خوشحال"
     
     elif cmd == 'web':
         if len(parts) > 1:
             query = ' '.join(parts[1:])
-            results = internet.search_web(query, 3)
-            if results:
-                return f"نتایج جستجو برای '{query}':\n" + "\n".join(results[:2])
+            try:
+                results = internet.search_web(query, 3)
+                if results:
+                    return f"🌐 نتایج جستجو برای '{query}':\n" + "\n".join(results[:2])
+                else:
+                    return f"🌐 نتیجه‌ای برای '{query}' پیدا نشد"
+            except:
+                return f"🌐 خطا در جستجو برای '{query}'"
         return "استفاده: /web <سوال جستجو>"
     
     return f"دستور '{cmd}' شناخته نشد. /help را امتحان کنید."
