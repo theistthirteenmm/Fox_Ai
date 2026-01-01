@@ -5,6 +5,7 @@ class ChatApp {
         this.sendButton = document.getElementById('sendButton');
         this.voiceButton = document.getElementById('voiceButton');
         this.messages = document.getElementById('messages');
+        this.chatContainer = document.querySelector('.chat-container'); // Add chat container reference
         this.status = document.getElementById('status');
         this.typing = document.getElementById('typing');
         this.isRecording = false;
@@ -16,6 +17,7 @@ class ChatApp {
     init() {
         this.setupEventListeners();
         this.setupVoiceRecognition();
+        this.setupScrollObserver(); // Add scroll observer
         this.connect();
         this.setWelcomeTime();
     }
@@ -34,6 +36,18 @@ class ChatApp {
         this.messageInput.addEventListener('input', () => {
             this.adjustTextareaHeight();
             this.updateSendButton();
+        });
+    }
+    
+    setupScrollObserver() {
+        // Observer to auto-scroll when new content is added
+        const observer = new MutationObserver(() => {
+            this.scrollToBottom();
+        });
+        
+        observer.observe(this.messages, {
+            childList: true,
+            subtree: true
         });
     }
     
@@ -220,12 +234,23 @@ class ChatApp {
         messageDiv.appendChild(timeDiv);
         
         this.messages.appendChild(messageDiv);
+        
+        // Force scroll to bottom after adding message
         this.scrollToBottom();
+        
+        // Also scroll when content might change size
+        requestAnimationFrame(() => {
+            this.scrollToBottom();
+        });
     }
     
     showTyping() {
         this.typing.style.display = 'flex';
+        // Scroll when typing indicator appears
         this.scrollToBottom();
+        requestAnimationFrame(() => {
+            this.scrollToBottom();
+        });
     }
     
     hideTyping() {
@@ -244,9 +269,27 @@ class ChatApp {
     }
     
     scrollToBottom() {
+        // Use chat container for scrolling (it has overflow-y: auto)
+        const container = this.chatContainer;
+        
+        // Immediate scroll
+        container.scrollTop = container.scrollHeight;
+        
+        // Smooth scroll as backup
+        container.scrollTo({
+            top: container.scrollHeight,
+            behavior: 'smooth'
+        });
+        
+        // Delayed scroll to ensure content is rendered
         setTimeout(() => {
-            this.messages.scrollTop = this.messages.scrollHeight;
-        }, 100);
+            container.scrollTop = container.scrollHeight;
+        }, 50);
+        
+        // Additional scroll for slow rendering
+        setTimeout(() => {
+            container.scrollTop = container.scrollHeight;
+        }, 200);
     }
     
     getCurrentTime() {
