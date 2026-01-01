@@ -1,7 +1,7 @@
 #!/bin/bash
 
-echo "🦊 Fox AI Desktop App Builder"
-echo "=============================="
+echo "🦊 Fox AI - Standalone Desktop App"
+echo "=================================="
 
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then
@@ -9,30 +9,37 @@ if ! command -v node &> /dev/null; then
     exit 1
 fi
 
-# Check if npm is installed
-if ! command -v npm &> /dev/null; then
-    echo "❌ npm is not installed. Please install npm first."
+# Check if Python is available
+if ! command -v python &> /dev/null; then
+    echo "❌ Python is not installed. Please install Python first."
     exit 1
 fi
 
-echo "📦 Installing dependencies..."
-cd electron
-npm install
+echo "📦 Setting up Fox AI..."
+
+# Install Python dependencies if needed
+if [ ! -d "../venv" ]; then
+    echo "🐍 Setting up Python environment..."
+    cd ..
+    python -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    cd electron
+else
+    echo "✅ Python environment ready"
+fi
+
+# Install Node dependencies if needed
+if [ ! -d "node_modules" ]; then
+    echo "📦 Installing Node.js dependencies..."
+    npm install
+else
+    echo "✅ Node.js dependencies ready"
+fi
 
 echo "🚀 Starting Fox AI Desktop App..."
-echo "Make sure the web server is running on http://localhost:8080"
+echo "The app will start its own web server automatically."
 echo ""
 
-# Check if web server is running
-if curl -s http://localhost:8080 > /dev/null; then
-    echo "✅ Web server is running"
-    echo "🖥️  Starting Electron app..."
-    npm start
-else
-    echo "❌ Web server is not running on http://localhost:8080"
-    echo "Please start the web server first:"
-    echo "cd /home/hamed/personal-ai"
-    echo "source venv/bin/activate"
-    echo "python start_web.py"
-    exit 1
-fi
+# Start the Electron app (it will start the web server internally)
+npm start

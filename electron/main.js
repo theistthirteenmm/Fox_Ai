@@ -1,9 +1,46 @@
 const { app, BrowserWindow, Menu, shell, ipcMain } = require('electron');
 const path = require('path');
+const { spawn } = require('child_process');
 
 let mainWindow;
+let webServer;
 
-function createWindow() {
+function startWebServer() {
+    return new Promise((resolve, reject) => {
+        console.log('🚀 Starting Fox AI web server...');
+        
+        // Start the Python web server
+        webServer = spawn('python', ['start_web.py'], {
+            cwd: path.join(__dirname, '..'),
+            stdio: 'pipe'
+        });
+        
+        webServer.stdout.on('data', (data) => {
+            console.log(`Server: ${data}`);
+            if (data.toString().includes('Uvicorn running')) {
+                resolve();
+            }
+        });
+        
+        webServer.stderr.on('data', (data) => {
+            console.error(`Server Error: ${data}`);
+        });
+        
+        webServer.on('close', (code) => {
+            console.log(`Server process exited with code ${code}`);
+        });
+        
+        // Timeout after 10 seconds
+        setTimeout(() => {
+            resolve(); // Continue anyway
+        }, 10000);
+    });
+}
+
+async function createWindow() {
+    // Start web server first
+    await startWebServer();
+    
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
@@ -31,6 +68,10 @@ function createWindow() {
     // Handle window closed
     mainWindow.on('closed', () => {
         mainWindow = null;
+        // Kill web server when window closes
+        if (webServer) {
+            webServer.kill();
+        }
     });
 
     // Open external links in browser
@@ -123,6 +164,11 @@ function createMenu() {
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
+    // Kill web server
+    if (webServer) {
+        webServer.kill();
+    }
+    
     if (process.platform !== 'darwin') {
         app.quit();
     }
@@ -131,6 +177,13 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();
+    }
+});
+
+app.on('before-quit', () => {
+    // Kill web server before quitting
+    if (webServer) {
+        webServer.kill();
     }
 });
 
