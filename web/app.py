@@ -15,6 +15,8 @@ from backend.core.ai_connector import AIConnector
 from backend.config.settings import settings
 from web.terminal import add_terminal_support
 from backend.core.personality import PersonalitySystem
+from backend.core.user_profile import UserProfile
+from backend.core.fox_learning import FoxLearningSystem
 
 app = FastAPI(title="Fox - Personal AI Assistant")
 
@@ -31,6 +33,60 @@ conversation_manager = ConversationManager()
 internet = InternetAccess()
 ai_connector = AIConnector()
 personality = PersonalitySystem()
+
+# Initialize user profile and learning system
+user_profile = UserProfile()
+fox_learning = FoxLearningSystem(user_profile)
+
+async def handle_web_command(command: str, websocket: WebSocket) -> str:
+    """Handle web chat commands"""
+    parts = command.strip().split()
+    cmd = parts[0][1:].lower()  # Remove /
+    
+    if cmd == 'help':
+        return """دستورات موجود:
+• /help - نمایش راهنما
+• /teach <کلید> <پاسخ> - آموزش پاسخ خاص  
+• /learn <موضوع> <حقیقت> - آموزش دانش جدید
+• /learned - نمایش آمار یادگیری
+• /mood - نمایش وضعیت احساسی
+• /web <سوال> - جستجو در اینترنت"""
+    
+    elif cmd == 'teach':
+        if len(parts) >= 2:
+            rest = command[6:].strip()
+            if ' ' in rest:
+                trigger, response = rest.split(' ', 1)
+                return fox_learning.teach_response(trigger, response)
+        return "استفاده: /teach <کلید> <پاسخ>"
+    
+    elif cmd == 'learn':
+        if len(parts) >= 2:
+            rest = command[6:].strip()
+            if ' ' in rest:
+                topic, fact = rest.split(' ', 1)
+                return fox_learning.teach_fact(topic, fact)
+        return "استفاده: /learn <موضوع> <حقیقت>"
+    
+    elif cmd == 'learned':
+        stats = fox_learning.get_learning_stats()
+        return f"""📚 آمار یادگیری Fox:
+• پاسخهای آموزش داده شده: {stats['custom_responses']}
+• حقایق یادگیری شده: {stats['learned_facts']}
+• اطلاعات فرهنگی: {stats['cultural_knowledge']}"""
+    
+    elif cmd == 'mood':
+        return f"وضعیت احساسی Fox: {personality.get_current_mood()}"
+    
+    elif cmd == 'web':
+        if len(parts) > 1:
+            query = ' '.join(parts[1:])
+            results = internet.search_web(query, 3)
+            if results:
+                return f"نتایج جستجو برای '{query}':\n" + "\n".join(results[:2])
+        return "استفاده: /web <سوال جستجو>"
+    
+    return f"دستور '{cmd}' شناخته نشد. /help را امتحان کنید."
 
 # Add terminal support
 add_terminal_support(app)
@@ -73,7 +129,17 @@ async def websocket_endpoint(websocket: WebSocket):
             }))
             
             try:
-                # Check if user is asking for web search
+                # Check for commands
+            if user_message.startswith('/'):
+                command_response = await handle_web_command(user_message, websocket)
+                if command_response:
+                    await websocket.send_text(json.dumps({
+                        "type": "message",
+                        "message": command_response
+                    }))
+                    continue
+            
+            # Check if user is asking for web search
                 if any(keyword in user_message.lower() for keyword in ['جستجو کن', 'search', 'اینترنت', 'آخرین اخبار', 'خبر', 'وضعیت آب و هوا']):
                     # Add web search results to context
                     web_results = internet.search_web(user_message, 3)
@@ -93,7 +159,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 context_messages.insert(0, ChatMessage("system", personality_prompt))
                 
                 # Get AI response
-                response = llm.chat(context_messages)
+                response = llm.chat(context_messages, fox_learning=fox_learning)
                 
                 # Apply personality styling
                 styled_response = personality.generate_response_style(response)
