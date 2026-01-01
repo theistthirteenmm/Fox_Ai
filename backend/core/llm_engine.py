@@ -53,16 +53,46 @@ class LLMEngine:
     def chat(self, messages: List[ChatMessage], stream: bool = False) -> str:
         """Send chat messages and get response"""
         try:
-            # Convert to Ollama format
-            ollama_messages = [
-                {"role": msg.role, "content": msg.content} 
-                for msg in messages
-            ]
+            # Add Persian system prompt for better responses
+            persian_system_prompt = """شما Fox هستید، یک دستیار هوشمند فارسی‌زبان که:
+- به زبان فارسی روان و طبیعی پاسخ می‌دهید
+- صمیمی، دوستانه و مفید هستید
+- از کلمات ساده و قابل فهم استفاده می‌کنید
+- پاسخ‌های کوتاه و مفید می‌دهید
+- همیشه مؤدب و احترام‌آمیز هستید
+
+لطفاً به زبان فارسی پاسخ دهید."""
+
+            # Convert to Ollama format with improved system prompt
+            ollama_messages = []
+            has_system = any(msg.role == 'system' for msg in messages)
+            
+            if not has_system:
+                ollama_messages.append({
+                    "role": "system", 
+                    "content": persian_system_prompt
+                })
+            
+            for msg in messages:
+                if msg.role == 'system' and not has_system:
+                    # Combine with our Persian prompt
+                    ollama_messages[0]['content'] = persian_system_prompt + "\n\n" + msg.content
+                else:
+                    ollama_messages.append({
+                        "role": msg.role, 
+                        "content": msg.content
+                    })
             
             response = self.client.chat(
                 model=self.model_name,
                 messages=ollama_messages,
-                stream=stream
+                stream=stream,
+                options={
+                    'temperature': 0.7,
+                    'top_p': 0.9,
+                    'repeat_penalty': 1.1,
+                    'num_ctx': 4096
+                }
             )
             
             if stream:

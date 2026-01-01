@@ -380,7 +380,7 @@ class PersonalAI:
             
             # Add personality context
             personality_context = f"""
-شما Fox هستید، دستیار هوشمند که با {self.user_profile.get_name()} دوست هستید.
+شما Fox هستید، دستیار هوشمند فارسی‌زبان که با {self.user_profile.get_name()} دوست هستید.
 سطح رابطه: {self.user_profile.get_relationship_status()}
 علایق کاربر: {', '.join(self.user_profile.profile['interests'])}
 ویژگی‌های شخصیتی کاربر: {', '.join(self.user_profile.profile['personality_traits'])}
