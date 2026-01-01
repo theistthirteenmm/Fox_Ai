@@ -12,7 +12,7 @@
 </head>
 <body>
     <div class="container">
-        <header>
+        <header class="chat-header">
             <h1>🦊 Fox - دستیار هوش مصنوعی شخصی</h1>
             <div class="header-controls">
                 <button id="ttsToggle" class="tts-toggle" title="خاموش/روشن کردن صدا">
@@ -36,12 +36,15 @@
             </div>
             
             <div class="typing-indicator" id="typing" style="display: none;">
-                <div class="typing-dots">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                <div class="fox-avatar">🦊</div>
+                <div class="typing-content">
+                    <div class="typing-text">Fox در حال تایپ...</div>
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
                 </div>
-                <span>در حال تایپ...</span>
             </div>
             
             <div class="browser-info" id="browserInfo" style="display: none;">

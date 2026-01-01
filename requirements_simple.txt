@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+alembic
+pydantic
+python-multipart
+jinja2
+python-dotenv
+httpx
+websockets
+rich
+click
+requests
+beautifulsoup4
+ollama

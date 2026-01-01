@@ -10,9 +10,14 @@ from typing import List, Dict
 from backend.core.user_profile import UserProfile
 
 class FoxLearningSystem:
-    def __init__(self, user_profile: UserProfile):
+    def __init__(self, user_profile):
         self.user_profile = user_profile
-        self.learning_file = f"data/profiles/{user_profile.get_name()}_learning.json"
+        # Handle both dict and UserProfile object
+        if isinstance(user_profile, dict):
+            user_name = user_profile.get('name', 'حامد')
+        else:
+            user_name = user_profile.get_name()
+        self.learning_file = f"data/profiles/{user_name}_learning.json"
         self.learned_data = self.load_learned_data()
     
     def load_learned_data(self) -> Dict:

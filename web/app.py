@@ -18,6 +18,9 @@ from backend.core.personality import PersonalitySystem
 from backend.core.user_profile import UserProfile
 from backend.core.fox_learning import FoxLearningSystem
 from backend.commands.api_commands import handle_api_command
+from backend.core.user_profiles import user_manager
+from backend.core.multi_ai_system import multi_ai_system
+from backend.core.fox_scraper import fox_scraper
 
 app = FastAPI(title="Fox - Personal AI Assistant")
 
@@ -79,7 +82,15 @@ async def handle_web_command(command: str, websocket: WebSocket) -> str:
 • /listen - راهنمای استفاده از میکروفن
 • /voice - راهنمای مکالمه صوتی
 • /new - شروع مکالمه جدید
-• /clear - پاک کردن مکالمه فعلی"""
+• /clear - پاک کردن مکالمه فعلی
+• /multi_ai_on - فعال کردن Multi-AI
+• /multi_ai_off - غیرفعال کردن Multi-AI  
+• /multi_ai_status - وضعیت Multi-AI
+• /ai_providers - لیست AI providers
+• /add_openai [API_KEY] - اضافه کردن OpenAI
+• /add_claude [API_KEY] - اضافه کردن Claude
+• /add_gemini [API_KEY] - اضافه کردن Gemini
+• /add_custom [نام] [API_KEY] [URL] - اضافه کردن AI دلخواه"""
     
     elif cmd == 'models':
         try:
@@ -411,6 +422,122 @@ speechSynthesis.getVoices().forEach((voice, i) => {
     elif cmd == 'tts_off':
         return "🔇 صدای Fox خاموش شد - فقط متن نمایش داده می‌شود"
     
+    elif cmd == 'download_url':
+        if len(parts) > 1:
+            url = parts[1]
+            
+            # ارسال پیام شروع
+            await websocket.send_text(json.dumps({
+                "type": "message", 
+                "message": f"🌐 شروع دانلود از:\n{url}\n\nلطفاً صبر کنید... ⏳"
+            }))
+            
+            try:
+                from backend.core.url_downloader import url_downloader
+                result = url_downloader.download_and_process(url)
+                
+                if "error" in result:
+                    return f"❌ خطا: {result['error']}"
+                else:
+                    success_msg = f"""✅ **دانلود از URL موفق بود!**
+
+🌐 **آدرس:** {result['url']}
+📥 **دانلود شده:** {result['downloaded']} مکالمه  
+💾 **ذخیره شده:** {result['saved']} مکالمه
+
+🦊 **Fox یاد گرفت!**
+مکالمات جدید به حافظه اضافه شد.
+
+**تست کن:** چیزی بگو و ببین Fox چی یاد گرفته!"""
+                    
+                    return success_msg
+                    
+            except Exception as e:
+                return f"❌ خطا در دانلود: {str(e)}"
+        else:
+            return """📖 **راهنمای دانلود از URL:**
+
+**استفاده:**
+`/download_url https://example.com/dataset.json`
+
+**فرمت‌های پشتیبانی شده:**
+• JSON: `{"q": "سوال", "a": "جواب"}`
+• CSV: `سوال,جواب`  
+• TXT: خط اول سوال، خط دوم جواب
+
+**مثال:**
+`/download_url https://raw.githubusercontent.com/user/repo/main/persian_qa.json`"""
+    
+    elif cmd == 'multi_ai_on':
+        result = multi_ai_system.enable()
+        return result
+        
+    elif cmd == 'multi_ai_off':
+        result = multi_ai_system.disable()
+        return result
+        
+    elif cmd == 'multi_ai_status':
+        result = multi_ai_system.get_status()
+        return result
+    
+    elif cmd == 'ai_providers':
+        from backend.core.ai_providers import ai_manager
+        providers = ai_manager.get_available_providers()
+        if providers:
+            result = "🤖 AI Providers موجود:\n"
+            for p in providers:
+                status = "🟢" if p.is_available() else "🔴"
+                result += f"{status} {p.name}\n"
+            return result
+        return "❌ هیچ AI provider موجود نیست"
+    
+    elif cmd == 'add_openai':
+        if len(parts) < 2:
+            return "❌ API key لازم است: /add_openai YOUR_API_KEY"
+        
+        api_key = parts[1]
+        from backend.core.ai_providers import ai_manager, OpenAIProvider
+        provider = OpenAIProvider(api_key)
+        ai_manager.add_provider(provider)
+        return "✅ OpenAI اضافه شد!"
+    
+    elif cmd == 'add_claude':
+        if len(parts) < 2:
+            return "❌ API key لازم است: /add_claude YOUR_API_KEY"
+        
+        api_key = parts[1]
+        from backend.core.ai_providers import ai_manager, ClaudeProvider
+        provider = ClaudeProvider(api_key)
+        ai_manager.add_provider(provider)
+        return "✅ Claude اضافه شد!"
+    
+    elif cmd == 'add_gemini':
+        if len(parts) < 2:
+            return "❌ API key لازم است: /add_gemini YOUR_API_KEY"
+        
+        api_key = parts[1]
+        from backend.core.ai_providers import ai_manager, GeminiProvider
+        provider = GeminiProvider(api_key)
+        ai_manager.add_provider(provider)
+        return "✅ Gemini اضافه شد!"
+    
+    elif cmd == 'add_custom':
+        if len(parts) < 4:
+            return """❌ پارامترهای لازم:
+/add_custom [نام] [API_KEY] [BASE_URL]
+
+مثال:
+/add_custom MyAI sk-123 https://api.myai.com/v1/chat"""
+        
+        name = parts[1]
+        api_key = parts[2]
+        base_url = parts[3]
+        
+        from backend.core.ai_providers import ai_manager, CustomProvider
+        provider = CustomProvider(name, api_key, base_url)
+        ai_manager.add_provider(provider)
+        return f"✅ {name} اضافه شد!"
+    
     return f"دستور '{cmd}' شناخته نشد. /help را امتحان کنید."
 
 # Add terminal support
@@ -440,6 +567,27 @@ async def websocket_endpoint(websocket: WebSocket):
             
             if not user_message.strip():
                 continue
+                
+            # Check for new user introduction
+            potential_new_user = user_manager.detect_new_user(user_message)
+            if potential_new_user and potential_new_user != user_manager.current_user:
+                # Switch to new user
+                user_manager.switch_user(potential_new_user)
+                
+                # Check if profile exists
+                profile = user_manager.get_user_profile(potential_new_user)
+                if not profile:
+                    # Ask for relationship with Hamed
+                    relationship_question = user_manager.ask_for_relationship(potential_new_user)
+                    await websocket.send_text(json.dumps({
+                        "type": "message",
+                        "message": relationship_question,
+                        "sender": "assistant"
+                    }))
+                    continue
+            
+            # Update conversation stats for current user
+            user_manager.update_conversation_stats(user_manager.current_user, user_message)
             
             # Add user message to conversation
             conversation_manager.add_message("user", user_message)
@@ -493,6 +641,16 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 # Get AI response
                 response = llm.chat(context_messages, fox_learning=fox_learning)
+                
+                # اگر Multi-AI فعال باشه، بهبود پاسخ
+                try:
+                    from backend.core.multi_ai_system import multi_ai_system
+                    if multi_ai_system.is_enabled():
+                        enhanced_response = multi_ai_system.get_best_response(user_message)
+                        if enhanced_response and enhanced_response != response:
+                            response = enhanced_response
+                except:
+                    pass
                 
                 # Apply personality styling
                 styled_response = personality.generate_response_style(response)
@@ -605,8 +763,3 @@ async def get_mood():
 @app.post("/api/mood")
 async def set_mood(emotion: str, value: float):
     """Set specific emotion"""
-    try:
-        result = personality.set_emotion(emotion, value)
-        return {"message": result, "emotions": personality.get_emotion_state()}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
