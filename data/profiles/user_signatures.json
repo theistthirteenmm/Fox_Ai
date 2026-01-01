@@ -1,0 +1,574 @@
+{
+  "حامد": {
+    "writing_styles": [
+      {
+        "avg_sentence_length": 5.0,
+        "punctuation": {
+          "question_marks": 1,
+          "exclamations": 0,
+          "dots": 0,
+          "emojis": 0
+        },
+        "personal_words": {
+          "من": 1
+        },
+        "question_style": {
+          "direct_questions": 0,
+          "polite_requests": 0
+        },
+        "text_length": 55,
+        "word_count": 10
+      },
+      {
+        "avg_sentence_length": 4.0,
+        "punctuation": {
+          "question_marks": 1,
+          "exclamations": 0,
+          "dots": 0,
+          "emojis": 0
+        },
+        "personal_words": {},
+        "question_style": {
+          "direct_questions": 0,
+          "polite_requests": 0
+        },
+        "text_length": 34,
+        "word_count": 8
+      },
+      {
+        "avg_sentence_length": 2.5,
+        "punctuation": {
+          "question_marks": 0,
+          "exclamations": 1,
+          "dots": 0,
+          "emojis": 0
+        },
+        "personal_words": {},
+        "question_style": {
+          "direct_questions": 0,
+          "polite_requests": 1
+        },
+        "text_length": 23,
+        "word_count": 5
+      },
+      {
+        "avg_sentence_length": 7.0,
+        "punctuation": {
+          "question_marks": 0,
+          "exclamations": 0,
+          "dots": 0,
+          "emojis": 0
+        },
+        "personal_words": {},
+        "question_style": {
+          "direct_questions": 0,
+          "polite_requests": 0
+        },
+        "text_length": 41,
+        "word_count": 7
+      },
+      {
+        "avg_sentence_length": 7.0,
+        "punctuation": {
+          "question_marks": 0,
+          "exclamations": 0,
+          "dots": 0,
+          "emojis": 0
+        },
+        "personal_words": {},
+        "question_style": {
+          "direct_questions": 0,
+          "polite_requests": 0
+        },
+        "text_length": 41,
+        "word_count": 7
+      },
+      {
+        "avg_sentence_length": 7.0,
+        "punctuation": {
+          "question_marks": 0,
+          "exclamations": 0,
+          "dots": 0,
+          "emojis": 0
+        },
+        "personal_words": {},
+        "question_style": {
+          "direct_questions": 0,
+          "polite_requests": 0
+        },
+        "text_length": 41,
+        "word_count": 7
+      },
+      {
+        "avg_sentence_length": 7.0,
+        "punctuation": {
+          "question_marks": 0,
+          "exclamations": 0,
+          "dots": 0,
+          "emojis": 0
+        },
+        "personal_words": {},
+        "question_style": {
+          "direct_questions": 0,
+          "polite_requests": 0
+        },
+        "text_length": 41,
+        "word_count": 7
+      },
+      {
+        "avg_sentence_length": 7.0,
+        "punctuation": {
+          "question_marks": 0,
+          "exclamations": 0,
+          "dots": 0,
+          "emojis": 0
+        },
+        "personal_words": {},
+        "question_style": {
+          "direct_questions": 0,
+          "polite_requests": 0
+        },
+        "text_length": 41,
+        "word_count": 7
+      }
+    ],
+    "content_patterns": [
+      {
+        "topics": {
+          "tech": 1,
+          "family": 0,
+          "work": 0,
+          "daily": 0,
+          "emotions": 0
+        },
+        "speech_patterns": {
+          "formal": 0,
+          "informal": 0,
+          "questions": 1,
+          "commands": 0
+        }
+      },
+      {
+        "topics": {
+          "tech": 1,
+          "family": 0,
+          "work": 0,
+          "daily": 0,
+          "emotions": 0
+        },
+        "speech_patterns": {
+          "formal": 0,
+          "informal": 0,
+          "questions": 1,
+          "commands": 0
+        }
+      },
+      {
+        "topics": {
+          "tech": 0,
+          "family": 0,
+          "work": 0,
+          "daily": 0,
+          "emotions": 0
+        },
+        "speech_patterns": {
+          "formal": 0,
+          "informal": 0,
+          "questions": 0,
+          "commands": 0
+        }
+      },
+      {
+        "topics": {
+          "tech": 2,
+          "family": 0,
+          "work": 0,
+          "daily": 0,
+          "emotions": 0
+        },
+        "speech_patterns": {
+          "formal": 0,
+          "informal": 0,
+          "questions": 0,
+          "commands": 0
+        }
+      },
+      {
+        "topics": {
+          "tech": 2,
+          "family": 0,
+          "work": 0,
+          "daily": 0,
+          "emotions": 0
+        },
+        "speech_patterns": {
+          "formal": 0,
+          "informal": 0,
+          "questions": 0,
+          "commands": 0
+        }
+      },
+      {
+        "topics": {
+          "tech": 2,
+          "family": 0,
+          "work": 0,
+          "daily": 0,
+          "emotions": 0
+        },
+        "speech_patterns": {
+          "formal": 0,
+          "informal": 0,
+          "questions": 0,
+          "commands": 0
+        }
+      },
+      {
+        "topics": {
+          "tech": 2,
+          "family": 0,
+          "work": 0,
+          "daily": 0,
+          "emotions": 0
+        },
+        "speech_patterns": {
+          "formal": 0,
+          "informal": 0,
+          "questions": 0,
+          "commands": 0
+        }
+      },
+      {
+        "topics": {
+          "tech": 2,
+          "family": 0,
+          "work": 0,
+          "daily": 0,
+          "emotions": 0
+        },
+        "speech_patterns": {
+          "formal": 0,
+          "informal": 0,
+          "questions": 0,
+          "commands": 0
+        }
+      }
+    ],
+    "common_phrases": [
+      "سلام چطوری",
+      "من یه",
+      "سوال تکنیکی",
+      "دارم در",
+      "مورد برنامه",
+      "میشه کمکم",
+      "کنی با",
+      "این کد",
+      "خیلی مهمه",
+      "ممنون از",
+      "عالی بود",
+      "سوال تکنیکی",
+      "کد برنامه",
+      "نویسی کمک",
+      "سوال تکنیکی",
+      "کد برنامه",
+      "نویسی کمک",
+      "سوال تکنیکی",
+      "کد برنامه",
+      "نویسی کمک",
+      "سوال تکنیکی",
+      "کد برنامه",
+      "نویسی کمک",
+      "سوال تکنیکی",
+      "کد برنامه",
+      "نویسی کمک"
+    ],
+    "last_updated": "2026-01-01T20:56:46.104252",
+    "message_count": 8
+  },
+  "مریم": {
+    "writing_styles": [
+      {
+        "avg_sentence_length": 2.0,
+        "punctuation": {
+          "question_marks": 2,
+          "exclamations": 1,
+          "dots": 0,
+          "emojis": 0
+        },
+        "personal_words": {},
+        "question_style": {
+          "direct_questions": 1,
+          "polite_requests": 0
+        },
+        "text_length": 33,
+        "word_count": 6
+      },
+      {
+        "avg_sentence_length": 3.0,
+        "punctuation": {
+          "question_marks": 0,
+          "exclamations": 0,
+          "dots": 1,
+          "emojis": 0
+        },
+        "personal_words": {},
+        "question_style": {
+          "direct_questions": 0,
+          "polite_requests": 0
+        },
+        "text_length": 34,
+        "word_count": 6
+      },
+      {
+        "avg_sentence_length": 6.0,
+        "punctuation": {
+          "question_marks": 0,
+          "exclamations": 0,
+          "dots": 0,
+          "emojis": 0
+        },
+        "personal_words": {},
+        "question_style": {
+          "direct_questions": 0,
+          "polite_requests": 0
+        },
+        "text_length": 31,
+        "word_count": 6
+      },
+      {
+        "avg_sentence_length": 8.0,
+        "punctuation": {
+          "question_marks": 0,
+          "exclamations": 0,
+          "dots": 0,
+          "emojis": 0
+        },
+        "personal_words": {},
+        "question_style": {
+          "direct_questions": 0,
+          "polite_requests": 0
+        },
+        "text_length": 42,
+        "word_count": 8
+      },
+      {
+        "avg_sentence_length": 8.0,
+        "punctuation": {
+          "question_marks": 0,
+          "exclamations": 0,
+          "dots": 0,
+          "emojis": 0
+        },
+        "personal_words": {},
+        "question_style": {
+          "direct_questions": 0,
+          "polite_requests": 0
+        },
+        "text_length": 42,
+        "word_count": 8
+      },
+      {
+        "avg_sentence_length": 8.0,
+        "punctuation": {
+          "question_marks": 0,
+          "exclamations": 0,
+          "dots": 0,
+          "emojis": 0
+        },
+        "personal_words": {},
+        "question_style": {
+          "direct_questions": 0,
+          "polite_requests": 0
+        },
+        "text_length": 42,
+        "word_count": 8
+      },
+      {
+        "avg_sentence_length": 8.0,
+        "punctuation": {
+          "question_marks": 0,
+          "exclamations": 0,
+          "dots": 0,
+          "emojis": 0
+        },
+        "personal_words": {},
+        "question_style": {
+          "direct_questions": 0,
+          "polite_requests": 0
+        },
+        "text_length": 42,
+        "word_count": 8
+      },
+      {
+        "avg_sentence_length": 8.0,
+        "punctuation": {
+          "question_marks": 0,
+          "exclamations": 0,
+          "dots": 0,
+          "emojis": 0
+        },
+        "personal_words": {},
+        "question_style": {
+          "direct_questions": 0,
+          "polite_requests": 0
+        },
+        "text_length": 42,
+        "word_count": 8
+      }
+    ],
+    "content_patterns": [
+      {
+        "topics": {
+          "tech": 0,
+          "family": 1,
+          "work": 0,
+          "daily": 0,
+          "emotions": 0
+        },
+        "speech_patterns": {
+          "formal": 0,
+          "informal": 1,
+          "questions": 2,
+          "commands": 0
+        }
+      },
+      {
+        "topics": {
+          "tech": 0,
+          "family": 0,
+          "work": 1,
+          "daily": 0,
+          "emotions": 1
+        },
+        "speech_patterns": {
+          "formal": 0,
+          "informal": 0,
+          "questions": 0,
+          "commands": 0
+        }
+      },
+      {
+        "topics": {
+          "tech": 0,
+          "family": 1,
+          "work": 0,
+          "daily": 0,
+          "emotions": 0
+        },
+        "speech_patterns": {
+          "formal": 0,
+          "informal": 0,
+          "questions": 0,
+          "commands": 0
+        }
+      },
+      {
+        "topics": {
+          "tech": 0,
+          "family": 2,
+          "work": 1,
+          "daily": 0,
+          "emotions": 1
+        },
+        "speech_patterns": {
+          "formal": 0,
+          "informal": 0,
+          "questions": 0,
+          "commands": 0
+        }
+      },
+      {
+        "topics": {
+          "tech": 0,
+          "family": 2,
+          "work": 1,
+          "daily": 0,
+          "emotions": 1
+        },
+        "speech_patterns": {
+          "formal": 0,
+          "informal": 0,
+          "questions": 0,
+          "commands": 0
+        }
+      },
+      {
+        "topics": {
+          "tech": 0,
+          "family": 2,
+          "work": 1,
+          "daily": 0,
+          "emotions": 1
+        },
+        "speech_patterns": {
+          "formal": 0,
+          "informal": 0,
+          "questions": 0,
+          "commands": 0
+        }
+      },
+      {
+        "topics": {
+          "tech": 0,
+          "family": 2,
+          "work": 1,
+          "daily": 0,
+          "emotions": 1
+        },
+        "speech_patterns": {
+          "formal": 0,
+          "informal": 0,
+          "questions": 0,
+          "commands": 0
+        }
+      },
+      {
+        "topics": {
+          "tech": 0,
+          "family": 2,
+          "work": 1,
+          "daily": 0,
+          "emotions": 1
+        },
+        "speech_patterns": {
+          "formal": 0,
+          "informal": 0,
+          "questions": 0,
+          "commands": 0
+        }
+      }
+    ],
+    "common_phrases": [
+      "سلام عزیزم",
+      "چه خبر",
+      "ها چطورن",
+      "امروز خیلی",
+      "کار زیاد",
+      "فردا قراره",
+      "با خانواده",
+      "بریم پارک",
+      "خانواده 0",
+      "ها و",
+      "کار خانه",
+      "امروز خسته",
+      "خانواده 1",
+      "ها و",
+      "کار خانه",
+      "امروز خسته",
+      "خانواده 2",
+      "ها و",
+      "کار خانه",
+      "امروز خسته",
+      "خانواده 3",
+      "ها و",
+      "کار خانه",
+      "امروز خسته",
+      "خانواده 4",
+      "ها و",
+      "کار خانه",
+      "امروز خسته"
+    ],
+    "last_updated": "2026-01-01T20:56:46.105213",
+    "message_count": 8
+  }
+}

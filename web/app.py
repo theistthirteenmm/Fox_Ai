@@ -24,6 +24,7 @@ from backend.core.fox_scraper import fox_scraper
 from backend.core.smart_memory import smart_memory
 from backend.core.smart_notifications import smart_notifications
 from backend.core.analytics_dashboard import analytics_dashboard
+from backend.core.smart_user_detection import smart_detector
 
 app = FastAPI(title="Fox - Personal AI Assistant")
 
@@ -77,6 +78,12 @@ async def handle_web_command(command: str, websocket: WebSocket) -> str:
 • /pretrain - پیش‌آموزش Fox با دیتاست
 • /teach <کلید> <پاسخ> - آموزش پاسخ خاص
 • /learn <موضوع> <حقیقت> - آموزش دانش جدید
+• /stats - آمار شخصی امروز
+• /dashboard - داشبورد تحلیلی کامل
+• /notifications - مدیریت اعلان‌های هوشمند
+• /context <موضوع> - یافتن مکالمات مرتبط
+• /detect <متن> - تشخیص کاربر از روی متن
+• /signature [نام] - آمار امضای کاربر
 • /learned - نمایش آمار یادگیری
 • /recall <موضوع> - یادآوری مکالمات قبلی
 • /speak <متن> - گفتن متن با صدا
@@ -577,6 +584,51 @@ speechSynthesis.getVoices().forEach((voice, i) => {
                 return "🤔 مکالمه مرتبطی پیدا نکردم"
         else:
             return "❓ لطفاً موضوع مورد نظر را بنویسید: `/context موضوع`"
+            
+    elif cmd == 'detect':
+        # تشخیص کاربر فعلی
+        known_users = [u['name'] for u in user_manager.get_all_users()]
+        if len(parts) > 1:
+            test_text = ' '.join(parts[1:])
+            detected_user, confidence = smart_detector.detect_current_user(test_text, known_users)
+            
+            if detected_user:
+                return f"🔍 **تشخیص کاربر:**\nمتن: \"{test_text}\"\n👤 کاربر تشخیص داده شده: **{detected_user}**\n📊 اطمینان: {confidence:.1%}"
+            else:
+                return f"🤷‍♂️ نتونستم کاربر رو تشخیص بدم\n📊 بهترین امتیاز: {confidence:.1%}"
+        else:
+            return "استفاده: `/detect متن برای تشخیص کاربر`"
+            
+    elif cmd == 'signature':
+        # آمار امضای کاربر
+        if len(parts) > 1:
+            username = parts[1]
+            stats = smart_detector.get_user_statistics(username)
+            
+            if "error" in stats:
+                return f"❌ {stats['error']}"
+                
+            return f"""📝 **آمار امضای {username}:**
+            
+📊 **آمار کلی:**
+• تعداد پیام‌ها: {stats['message_count']}
+• میانگین طول پیام: {stats['avg_message_length']:.1f} کاراکتر
+• عبارات رایج: {stats['common_phrases_count']} عبارت
+• قدرت امضا: {stats['signature_strength']:.1%}
+
+📅 **آخرین آپدیت:** {stats['last_updated'][:16].replace('T', ' ')}
+"""
+        else:
+            current_stats = smart_detector.get_user_statistics(user_manager.current_user)
+            if "error" not in current_stats:
+                return f"""📝 **آمار امضای شما:**
+                
+📊 تعداد پیام‌ها: {current_stats['message_count']}
+📏 میانگین طول: {current_stats['avg_message_length']:.1f} کاراکتر  
+💪 قدرت امضا: {current_stats['signature_strength']:.1%}
+"""
+            else:
+                return "❌ هنوز امضای شما ثبت نشده"
         result = multi_ai_system.get_status()
         return result
     
@@ -753,6 +805,36 @@ async def websocket_endpoint(websocket: WebSocket):
             # شروع زمان‌سنجی پاسخ
             import time
             start_time = time.time()
+            
+            # تشخیص هوشمند کاربر بر اساس سبک نوشتن
+            current_user = user_manager.current_user
+            known_users = [u['name'] for u in user_manager.get_all_users()]
+            
+            if len(known_users) > 1 and len(user_message.split()) >= 5:  # حداقل 5 کلمه
+                detected_user, confidence = smart_detector.detect_current_user(user_message, known_users)
+                
+                if detected_user and detected_user != current_user and confidence > 0.4:
+                    # تغییر کاربر با اطمینان بالا
+                    user_manager.switch_user(detected_user)
+                    
+                    await websocket.send_text(json.dumps({
+                        "type": "user_switch",
+                        "message": f"🔄 سلام {detected_user}! تشخیص دادم که تو هستی (اطمینان: {confidence:.0%})",
+                        "user": detected_user,
+                        "confidence": confidence
+                    }))
+                    
+                elif detected_user and detected_user != current_user and confidence > 0.25:
+                    # سوال تایید با اطمینان متوسط
+                    await websocket.send_text(json.dumps({
+                        "type": "user_confirmation",
+                        "message": f"🤔 احساس می‌کنم {detected_user} هستی؟ (اطمینان: {confidence:.0%})\nاگه درسته بگو 'بله' یا اگه اشتباهه اسمت رو بگو",
+                        "suggested_user": detected_user,
+                        "confidence": confidence
+                    }))
+            
+            # یادگیری سبک نوشتن کاربر فعلی
+            smart_detector.learn_user_signature(user_manager.current_user, user_message)
             
             # Add user message to conversation
             conversation_manager.add_message("user", user_message)
